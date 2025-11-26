@@ -1,3 +1,4 @@
+import { useAuth } from "../context/AuthContext"
 function Header({onSidebarToggle}){
     return (
     <header className="bg-white shadow-sm border-b border-gray-200">
@@ -42,6 +43,10 @@ function Header({onSidebarToggle}){
                 >
                     AD
                 </button>
+
+                <div>
+                    <button onClick={logout}>Logout</button>
+                </div>
             </div>
         </div>
     </header>

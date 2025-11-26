@@ -4,6 +4,8 @@ import { useState } from "react"
 import { Routes, Route } from "react-router-dom";
 import Dashboard from "./pages/Dashboard";
 import Products from "./pages/Products";
+import Login from "./pages/Login";
+import ProtectedRoute from "./components/ProtectedRoute";
 
 const App = () =>{
   const [sidebarToggle, setSidebarToggle] = useState(true);
@@ -13,18 +15,25 @@ const App = () =>{
   }
 
   return (
-    <div className="flex-1 flex h-screen bg-gray-100">
-    <Sidebar isOpen = {sidebarToggle} />
-      <div className="flex-1 flex flex-col ">
-        <Header onSidebarToggle = {toggleSidebar}/>
-        <main className="flex-1 bg-slate-200">
-          <Routes>
-            <Route path="/" element={<Dashboard/>}/>
-            <Route path="/products" element={<Products/>}/>
-          </Routes>
-        </main>
-      </div>
-    </div>
+    <Routes>
+      <Route path="/login" element={<Login/>} />
+      <Route path="/*" element={(
+      <ProtectedRoute>
+        <div className="flex-1 flex h-screen bg-gray-100">
+        <Sidebar isOpen = {sidebarToggle} />
+          <div className="flex-1 flex flex-col ">
+            <Header onSidebarToggle = {toggleSidebar}/>
+            <main className="flex-1 bg-slate-200">
+              <Routes>
+                <Route path="/" element={<Dashboard/>}/>
+                <Route path="/products" element={<Products/>}/>
+              </Routes>
+            </main>
+          </div>
+        </div>
+      </ProtectedRoute>
+      )}/>
+    </Routes>
   )
 }
 
