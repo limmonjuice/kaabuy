@@ -1,5 +1,8 @@
 import { useAuth } from "../context/AuthContext"
+
 function Header({onSidebarToggle}){
+    const { logout } = useAuth(); 
+    
     return (
     <header className="bg-white shadow-sm border-b border-gray-200">
         <div className="flex items-center justify-between px-6 py-4">
@@ -45,7 +48,12 @@ function Header({onSidebarToggle}){
                 </button>
 
                 <div>
-                    <button onClick={logout}>Logout</button>
+                    <button 
+                        onClick={logout}
+                        className="px-4 py-2 bg-gray-500 text-white rounded-lg hover:bg-red-600 transition-colors"
+                    >
+                        Logout
+                    </button>
                 </div>
             </div>
         </div>
