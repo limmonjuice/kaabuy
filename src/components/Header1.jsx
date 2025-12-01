@@ -1,7 +1,14 @@
-import { useAuth } from "../context/AuthContext"
+import { useAuth } from "../context/AuthContext";
+import { useNavigate } from "react-router-dom";
 
 function Header({onSidebarToggle}){
-    const { logout } = useAuth(); 
+    const { logout, user } = useAuth();
+    const navigate = useNavigate();
+
+    const handleLogout = () => {
+        logout();
+        navigate("/login");
+    }; 
     
     return (
     <header className="bg-white shadow-sm border-b border-gray-200">
@@ -40,21 +47,30 @@ function Header({onSidebarToggle}){
                     </span>
                 </button>
                 
-                <button 
-                    className="w-10 h-10 bg-gradient-to-br from-orange-400 to-orange-600 rounded-full flex items-center justify-center text-white font-semibold shadow-sm hover:shadow-md transition-shadow duration-200"
-                    aria-label="User profile"
-                >
-                    AD
-                </button>
+                {user && (
+                    <>
+                        <div className="flex items-center space-x-3">
+                            <button
+                                className="w-10 h-10 bg-gradient-to-br from-orange-400 to-orange-600 rounded-full flex items-center justify-center text-white font-semibold shadow-sm hover:shadow-md transition-shadow duration-200"
+                                aria-label="User profile"
+                                title={`${user.firstName} ${user.lastName}`}
+                            >
+                                {user.firstName?.charAt(0)}{user.lastName?.charAt(0)}
+                            </button>
+                            <div className="hidden md:block text-right">
+                                <p className="text-sm font-medium text-gray-900">{user.firstName} {user.lastName}</p>
+                                <p className="text-xs text-gray-500">{user.role}</p>
+                            </div>
+                        </div>
 
-                <div>
-                    <button 
-                        onClick={logout}
-                        className="px-4 py-2 bg-gray-500 text-white rounded-lg hover:bg-red-600 transition-colors"
-                    >
-                        Logout
-                    </button>
-                </div>
+                        <button
+                            onClick={handleLogout}
+                            className="px-4 py-2 bg-red-500 text-white rounded-lg hover:bg-red-600 transition-colors"
+                        >
+                            Logout
+                        </button>
+                    </>
+                )}
             </div>
         </div>
     </header>
