@@ -4,8 +4,7 @@ import { useState } from "react"
 import { Routes, Route } from "react-router-dom";
 import Dashboard from "./pages/Dashboard";
 import Products from "./pages/Products";
-import Login from "./pages/Login";
-import Register from "./pages/Register";
+import Auth from "./pages/Auth";
 import ProtectedRoute from "./components/ProtectedRoute";
 
 const App = () =>{
@@ -17,8 +16,8 @@ const App = () =>{
 
   return (
     <Routes>
-      <Route path="/login" element={<Login/>} />
-      <Route path="/register" element={<Register/>} />
+      <Route path="/login" element={<Auth/>} />
+      <Route path="/register" element={<Auth/>} />
       <Route path="/*" element={(
       <ProtectedRoute>
         <div className="flex-1 flex h-screen bg-gray-100">
