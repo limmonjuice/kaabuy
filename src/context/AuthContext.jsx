@@ -10,20 +10,22 @@ export const AuthProvider = ({children}) => {
     })
 
     function login(userData){
-        // userData contains: token, staffId, username, firstName, lastName, role
-        setToken(userData.token)
-        const userInfo = {
-            staffId: userData.staffId,
-            username: userData.username,
-            firstName: userData.firstName,
-            lastName: userData.lastName,
-            role: userData.role
-        }
-        setUser(userInfo)
+    setToken(userData.token)
 
-        localStorage.setItem("token", userData.token)
-        localStorage.setItem("user", JSON.stringify(userInfo))
+    const userInfo = {
+        staffId: userData.staffId,
+        username: userData.username,
+        firstName: userData.firstName,
+        lastName: userData.lastName,
+        storeName: userData.storeName,  // ✅ ADD THIS
+        role: userData.role
     }
+
+    setUser(userInfo)
+
+    localStorage.setItem("token", userData.token)
+    localStorage.setItem("user", JSON.stringify(userInfo))
+}
 
     function logout(){
         setToken(null)
