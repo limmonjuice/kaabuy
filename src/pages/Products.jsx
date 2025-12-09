@@ -1,7 +1,9 @@
 import { useState, useEffect } from "react";
 import { API_URL } from "../config/constants";
+import { useAuth } from "../context/AuthContext";
 
 function Products() {
+    const { token } = useAuth();
     const [products, setProducts] = useState([]);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState("");
@@ -31,7 +33,11 @@ function Products() {
     const fetchProducts = async () => {
         try {
             setLoading(true);
-            const response = await fetch(`${API_URL}/api/products`);
+            const response = await fetch(`${API_URL}/api/products`, {
+                headers: {
+                    "Authorization": `Bearer ${token}`
+                }
+            });
             if (!response.ok) throw new Error("Failed to fetch products");
             const data = await response.json();
             setProducts(data);
@@ -44,7 +50,11 @@ function Products() {
 
     const fetchCategories = async () => {
         try {
-            const response = await fetch(`${API_URL}/api/products/categories`);
+            const response = await fetch(`${API_URL}/api/products/categories`, {
+                headers: {
+                    "Authorization": `Bearer ${token}`
+                }
+            });
             if (response.ok) {
                 const data = await response.json();
                 setCategories(data);
@@ -119,7 +129,10 @@ function Products() {
 
             const response = await fetch(url, {
                 method: editingProduct ? "PUT" : "POST",
-                headers: { "Content-Type": "application/json" },
+                headers: {
+                    "Content-Type": "application/json",
+                    "Authorization": `Bearer ${token}`
+                },
                 body: JSON.stringify({
                     ...formData,
                     basePrice: parseFloat(formData.basePrice) || 0,
@@ -150,7 +163,10 @@ function Products() {
 
         try {
             const response = await fetch(`${API_URL}/api/products/${productId}`, {
-                method: "DELETE"
+                method: "DELETE",
+                headers: {
+                    "Authorization": `Bearer ${token}`
+                }
             });
 
             if (!response.ok) throw new Error("Failed to delete product");
