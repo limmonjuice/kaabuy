@@ -21,9 +21,9 @@ const App = () =>{
       <Route path="/*" element={(
       <ProtectedRoute>
         <div className="flex-1 flex h-screen bg-gray-100">
-        <Sidebar isOpen = {sidebarToggle} />
+        <Sidebar isOpen={sidebarToggle} onToggle={toggleSidebar} />
           <div className="flex-1 flex flex-col ">
-            <Header onSidebarToggle = {toggleSidebar}/>
+            <Header/>
             <main className="flex-1 bg-slate-200">
               <Routes>
                 <Route path="/" element={<Dashboard/>}/>

@@ -3,7 +3,7 @@ import { useNavigate } from "react-router-dom";
 import { useState } from "react";
 import logo from "../assets/primary_logo.jpg";
 
-function Header({ onSidebarToggle }) {
+function Header() {
     const { logout, user } = useAuth();
     const navigate = useNavigate();
     const [showDropdown, setShowDropdown] = useState(false);
