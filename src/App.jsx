@@ -4,6 +4,7 @@ import { useState } from "react"
 import { Routes, Route } from "react-router-dom";
 import Dashboard from "./pages/Dashboard";
 import Products from "./pages/Products";
+import Inventory from "./pages/Inventory";
 import Transactions from "./pages/Transactions";
 import Customers from "./pages/Customers";
 import POS from "./pages/POS";
@@ -33,6 +34,7 @@ const App = () =>{
                 <Route path="/" element={<Dashboard/>}/>
                 <Route path="/pos" element={<POS/>}/>
                 <Route path="/products" element={<Products/>}/>
+                <Route path="/inventory" element={<Inventory/>}/>
                 <Route path="/restock" element={<Restock/>}/>
                 <Route path="/transactions" element={<Transactions/>}/>
                 <Route path="/customers" element={<Customers/>}/>

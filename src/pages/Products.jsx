@@ -17,7 +17,9 @@ function Products() {
         category: "",
         basePrice: "",
         listPrice: "",
-        currentStock: "",
+        currentStock: "0",
+        displayStock: "0",
+        maxDisplayStock: "20",
         reorderLevel: "",
         unit: "pcs"
     });
@@ -64,12 +66,12 @@ function Products() {
         }
     };
 
-    // Filter products based on search and category
+    // Filter products based on search and category, limit to 20 for storefront display
     const filteredProducts = products.filter(product => {
         const matchesSearch = product.productName.toLowerCase().includes(searchTerm.toLowerCase());
         const matchesCategory = !selectedCategory || product.category === selectedCategory;
         return matchesSearch && matchesCategory;
-    });
+    }).slice(0, 20);
 
     // Handle form input changes
     const handleInputChange = (e) => {
@@ -85,7 +87,9 @@ function Products() {
             category: "",
             basePrice: "",
             listPrice: "",
-            currentStock: "",
+            currentStock: "0",
+            displayStock: "0",
+            maxDisplayStock: "20",
             reorderLevel: "",
             unit: "pcs"
         });
@@ -101,7 +105,9 @@ function Products() {
             category: product.category || "",
             basePrice: product.basePrice,
             listPrice: product.listPrice,
-            currentStock: product.currentStock,
+            currentStock: product.currentStock || 0,
+            displayStock: product.displayStock || 0,
+            maxDisplayStock: product.maxDisplayStock || 20,
             reorderLevel: product.reorderLevel,
             unit: product.unit || "pcs"
         });
@@ -138,6 +144,8 @@ function Products() {
                     basePrice: parseFloat(formData.basePrice) || 0,
                     listPrice: parseFloat(formData.listPrice),
                     currentStock: parseInt(formData.currentStock) || 0,
+                    displayStock: parseInt(formData.displayStock) || 0,
+                    maxDisplayStock: parseInt(formData.maxDisplayStock) || 20,
                     reorderLevel: parseInt(formData.reorderLevel) || 10
                 })
             });
@@ -176,11 +184,35 @@ function Products() {
         }
     };
 
+    // Refill display stock
+    const handleRefillDisplay = async (productId, productName) => {
+        if (!confirm(`Refill display stock for ${productName}?`)) return;
+
+        try {
+            const response = await fetch(`${API_URL}/api/products/${productId}/refill-display`, {
+                method: "POST",
+                headers: {
+                    "Authorization": `Bearer ${token}`
+                }
+            });
+
+            if (!response.ok) {
+                const errorData = await response.json();
+                throw new Error(errorData.error || "Failed to refill display stock");
+            }
+
+            fetchProducts();
+            alert(`Display stock refilled for ${productName}`);
+        } catch (err) {
+            alert(err.message);
+        }
+    };
+
     // Get stock status badge
     const getStockBadge = (product) => {
         if (product.currentStock === 0) {
             return <span className="px-2 py-1 text-xs font-medium rounded-full bg-red-100 text-red-700">Out of Stock</span>;
-        } else if (product.isLowStock) {
+        } else if (product.isLowStock || product.currentStock <= product.reorderLevel) {
             return <span className="px-2 py-1 text-xs font-medium rounded-full bg-yellow-100 text-yellow-700">Low Stock</span>;
         }
         return <span className="px-2 py-1 text-xs font-medium rounded-full bg-green-100 text-green-700">In Stock</span>;
@@ -190,8 +222,8 @@ function Products() {
         <div className="p-6">
             {/* Page Header */}
             <div className="mb-6">
-                <h1 className="text-2xl font-bold text-gray-900">Products</h1>
-                <p className="text-gray-500 text-sm mt-1">Manage your product inventory</p>
+                <h1 className="text-2xl font-bold text-gray-900">Store Products</h1>
+                <p className="text-gray-500 text-sm mt-1">Products displayed at the storefront (showing first 20 products)</p>
             </div>
 
             {/* Action Bar */}
@@ -271,7 +303,8 @@ function Products() {
                                     <th className="text-left px-6 py-4 text-xs font-semibold text-gray-500 uppercase tracking-wider">Category</th>
                                     <th className="text-right px-6 py-4 text-xs font-semibold text-gray-500 uppercase tracking-wider">Base Price</th>
                                     <th className="text-right px-6 py-4 text-xs font-semibold text-gray-500 uppercase tracking-wider">List Price</th>
-                                    <th className="text-center px-6 py-4 text-xs font-semibold text-gray-500 uppercase tracking-wider">Stock</th>
+                                    <th className="text-center px-6 py-4 text-xs font-semibold text-gray-500 uppercase tracking-wider">Warehouse</th>
+                                    <th className="text-center px-6 py-4 text-xs font-semibold text-gray-500 uppercase tracking-wider">Display</th>
                                     <th className="text-center px-6 py-4 text-xs font-semibold text-gray-500 uppercase tracking-wider">Status</th>
                                     <th className="text-center px-6 py-4 text-xs font-semibold text-gray-500 uppercase tracking-wider">Actions</th>
                                 </tr>
@@ -295,14 +328,28 @@ function Products() {
                                             ₱{product.listPrice?.toFixed(2)}
                                         </td>
                                         <td className="px-6 py-4 text-center">
-                                            <span className="font-medium text-gray-900">{product.currentStock}</span>
-                                            <span className="text-gray-400 text-xs ml-1">/ {product.reorderLevel}</span>
+                                            <span className="font-medium text-blue-600">{product.currentStock}</span>
+                                        </td>
+                                        <td className="px-6 py-4 text-center">
+                                            <span className="font-medium text-green-600">
+                                                {product.displayStock || 0}/{product.maxDisplayStock || 20}
+                                            </span>
                                         </td>
                                         <td className="px-6 py-4 text-center">
                                             {getStockBadge(product)}
                                         </td>
                                         <td className="px-6 py-4">
                                             <div className="flex items-center justify-center gap-2">
+                                                <button
+                                                    onClick={() => handleRefillDisplay(product.productId, product.productName)}
+                                                    className="p-2 text-gray-500 hover:text-blue-500 hover:bg-blue-50 rounded-lg transition-colors"
+                                                    title="Refill Display Stock"
+                                                    disabled={product.currentStock === 0}
+                                                >
+                                                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+                                                    </svg>
+                                                </button>
                                                 <button
                                                     onClick={() => handleEdit(product)}
                                                     className="p-2 text-gray-500 hover:text-orange-500 hover:bg-orange-50 rounded-lg transition-colors"
@@ -334,7 +381,7 @@ function Products() {
             {/* Product Count */}
             {!loading && filteredProducts.length > 0 && (
                 <div className="mt-4 text-sm text-gray-500">
-                    Showing {filteredProducts.length} of {products.length} products
+                    Showing {filteredProducts.length} of {products.length} products (limited to 20 for storefront)
                 </div>
             )}
 
@@ -437,10 +484,10 @@ function Products() {
                                 </div>
                             </div>
 
-                            {/* Stock Row */}
-                            <div className="grid grid-cols-3 gap-4">
+                            {/* Stock Row - Added warehouse and display stock */}
+                            <div className="grid grid-cols-2 gap-4">
                                 <div>
-                                    <label className="block text-sm font-medium text-gray-700 mb-1">Current Stock</label>
+                                    <label className="block text-sm font-medium text-gray-700 mb-1">Warehouse Stock</label>
                                     <input
                                         type="number"
                                         name="currentStock"
@@ -449,6 +496,34 @@ function Products() {
                                         min="0"
                                         className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-transparent"
                                         placeholder="0"
+                                    />
+                                </div>
+                                <div>
+                                    <label className="block text-sm font-medium text-gray-700 mb-1">Display Stock</label>
+                                    <input
+                                        type="number"
+                                        name="displayStock"
+                                        value={formData.displayStock}
+                                        onChange={handleInputChange}
+                                        min="0"
+                                        className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-transparent"
+                                        placeholder="0"
+                                    />
+                                </div>
+                            </div>
+
+                            {/* Max Display & Reorder Level Row */}
+                            <div className="grid grid-cols-2 gap-4">
+                                <div>
+                                    <label className="block text-sm font-medium text-gray-700 mb-1">Max Display Stock</label>
+                                    <input
+                                        type="number"
+                                        name="maxDisplayStock"
+                                        value={formData.maxDisplayStock}
+                                        onChange={handleInputChange}
+                                        min="0"
+                                        className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-transparent"
+                                        placeholder="20"
                                     />
                                 </div>
                                 <div>
@@ -463,25 +538,27 @@ function Products() {
                                         placeholder="10"
                                     />
                                 </div>
-                                <div>
-                                    <label className="block text-sm font-medium text-gray-700 mb-1">Unit</label>
-                                    <select
-                                        name="unit"
-                                        value={formData.unit}
-                                        onChange={handleInputChange}
-                                        className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-transparent bg-white"
-                                    >
-                                        <option value="pcs">pcs</option>
-                                        <option value="kg">kg</option>
-                                        <option value="g">g</option>
-                                        <option value="L">L</option>
-                                        <option value="mL">mL</option>
-                                        <option value="pack">pack</option>
-                                        <option value="box">box</option>
-                                        <option value="bottle">bottle</option>
-                                        <option value="can">can</option>
-                                    </select>
-                                </div>
+                            </div>
+
+                            {/* Unit */}
+                            <div>
+                                <label className="block text-sm font-medium text-gray-700 mb-1">Unit</label>
+                                <select
+                                    name="unit"
+                                    value={formData.unit}
+                                    onChange={handleInputChange}
+                                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-transparent bg-white"
+                                >
+                                    <option value="pcs">pcs</option>
+                                    <option value="kg">kg</option>
+                                    <option value="g">g</option>
+                                    <option value="L">L</option>
+                                    <option value="mL">mL</option>
+                                    <option value="pack">pack</option>
+                                    <option value="box">box</option>
+                                    <option value="bottle">bottle</option>
+                                    <option value="can">can</option>
+                                </select>
                             </div>
 
                             {/* Modal Footer */}

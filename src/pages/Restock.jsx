@@ -20,6 +20,7 @@ function Restock() {
         stockQuantity: "",
         priceSupplier: "",
         recordType: "IN",
+        adjustmentDirection: "add",
         deliveryDate: new Date().toISOString().split('T')[0]
     });
     const [formError, setFormError] = useState("");
@@ -151,6 +152,7 @@ function Restock() {
             stockQuantity: "",
             priceSupplier: "",
             recordType: "IN",
+            adjustmentDirection: "add",
             deliveryDate: new Date().toISOString().split('T')[0]
         });
         setFormError("");
@@ -159,16 +161,24 @@ function Restock() {
 
     const handleEdit = (record) => {
         setEditingRecord(record);
+        // For ADJUSTMENT, detect direction from quantity sign
+        const isNegativeAdjustment = record.recordType === 'ADJUSTMENT' && record.stockQuantity < 0;
         setFormData({
             productId: record.productId,
             supplierId: record.supplierId || "",
-            stockQuantity: record.stockQuantity,
+            stockQuantity: Math.abs(record.stockQuantity),
             priceSupplier: record.priceSupplier || "",
             recordType: record.recordType || "IN",
+            adjustmentDirection: isNegativeAdjustment ? "remove" : "add",
             deliveryDate: record.deliveryDate ? record.deliveryDate.split('T')[0] : new Date().toISOString().split('T')[0]
         });
         setFormError("");
         setShowModal(true);
+    };
+
+    const getSelectedProduct = () => {
+        if (!formData.productId) return null;
+        return products.find(p => p.productId === parseInt(formData.productId));
     };
 
     const handleSubmit = async (e) => {
@@ -182,10 +192,40 @@ function Restock() {
             return;
         }
 
+        const selectedProduct = getSelectedProduct();
+        let availableStock = selectedProduct ? selectedProduct.currentStock : 0;
+
+        // When editing, add back the original record's effect to get the true available stock
+        if (editingRecord) {
+            const originalType = editingRecord.recordType;
+            const originalQty = editingRecord.stockQuantity;
+            if (originalType === 'IN' || (originalType === 'ADJUSTMENT' && originalQty > 0)) {
+                availableStock -= Math.abs(originalQty);
+            } else if (originalType === 'OUT' || originalType === 'RETURN' || (originalType === 'ADJUSTMENT' && originalQty < 0)) {
+                availableStock += Math.abs(originalQty);
+            }
+        }
+
+        const quantityToCheck = parseInt(formData.stockQuantity);
+        const isSubtracting = formData.recordType === 'OUT' || formData.recordType === 'RETURN' ||
+            (formData.recordType === 'ADJUSTMENT' && formData.adjustmentDirection === 'remove');
+
+        if (isSubtracting && quantityToCheck > availableStock) {
+            setFormError(`Insufficient stock. You can only subtract up to ${availableStock} units for "${selectedProduct.productName}".`);
+            setFormLoading(false);
+            return;
+        }
+
         try {
             const url = editingRecord
                 ? `${API_URL}/api/stock-records/${editingRecord.recordId}`
                 : `${API_URL}/api/stock-records`;
+
+            // For ADJUSTMENT type, apply direction to quantity
+            let finalQuantity = parseInt(formData.stockQuantity);
+            if (formData.recordType === 'ADJUSTMENT' && formData.adjustmentDirection === 'remove') {
+                finalQuantity = -Math.abs(finalQuantity);
+            }
 
             const response = await fetch(url, {
                 method: editingRecord ? "PUT" : "POST",
@@ -196,7 +236,7 @@ function Restock() {
                 body: JSON.stringify({
                     productId: parseInt(formData.productId),
                     supplierId: formData.supplierId ? parseInt(formData.supplierId) : null,
-                    stockQuantity: parseInt(formData.stockQuantity),
+                    stockQuantity: finalQuantity,
                     priceSupplier: formData.priceSupplier ? parseFloat(formData.priceSupplier) : null,
                     recordType: formData.recordType,
                     deliveryDate: formData.deliveryDate ? `${formData.deliveryDate}T00:00:00` : null
@@ -205,7 +245,7 @@ function Restock() {
 
             if (!response.ok) {
                 const errorData = await response.json();
-                throw new Error(errorData.error || "Failed to save stock record");
+                throw new Error(errorData.message || "Failed to save stock record");
             }
 
             setShowModal(false);
@@ -260,21 +300,13 @@ function Restock() {
         return styles[type] || 'bg-gray-100 text-gray-700';
     };
 
-    const getStockBadge = (product) => {
-        if (product.currentStock === 0) {
-            return <span className="px-2 py-1 text-xs font-medium rounded-full bg-red-100 text-red-700">Out of Stock</span>;
-        } else if (product.currentStock <= product.reorderLevel) {
-            return <span className="px-2 py-1 text-xs font-medium rounded-full bg-yellow-100 text-yellow-700">Low Stock</span>;
-        }
-        return <span className="px-2 py-1 text-xs font-medium rounded-full bg-green-100 text-green-700">In Stock</span>;
-    };
-
     return (
         <div className="p-6">
             {/* Page Header */}
             <div className="mb-6">
                 <h1 className="text-2xl font-bold text-gray-900">Restock</h1>
-                <p className="text-gray-500 text-sm mt-1">Manage inventory restocking and stock records</p>
+                <p className="text-gray-500 text-sm mt-1">Manage warehouse inventory and stock records</p>
+                <p className="text-blue-600 text-xs mt-1">Note: Stock records update warehouse inventory. Use Products page to refill display stock.</p>
             </div>
 
             {/* Low Stock Alert */}
@@ -477,15 +509,23 @@ function Restock() {
                                             </span>
                                         </td>
                                         <td className="px-6 py-4 text-center">
-                                            <span className={`font-semibold ${record.recordType === 'IN' ? 'text-green-600' : record.recordType === 'OUT' ? 'text-red-600' : 'text-gray-900'}`}>
-                                                {record.recordType === 'IN' ? '+' : record.recordType === 'OUT' ? '-' : ''}{record.stockQuantity}
+                                            <span className={`font-semibold ${
+                                                record.recordType === 'IN' ? 'text-green-600' :
+                                                record.recordType === 'OUT' || record.recordType === 'RETURN' ? 'text-red-600' :
+                                                record.recordType === 'ADJUSTMENT' ? (record.stockQuantity >= 0 ? 'text-green-600' : 'text-red-600') :
+                                                'text-gray-900'
+                                            }`}>
+                                                {record.recordType === 'IN' ? '+' : ''}
+                                                {record.recordType === 'OUT' || record.recordType === 'RETURN' ? '-' : ''}
+                                                {record.recordType === 'ADJUSTMENT' ? (record.stockQuantity >= 0 ? '+' : '') : ''}
+                                                {record.recordType === 'ADJUSTMENT' ? record.stockQuantity : Math.abs(record.stockQuantity)}
                                             </span>
                                         </td>
                                         <td className="px-6 py-4 text-right text-gray-600">
                                             {formatCurrency(record.priceSupplier)}
                                         </td>
                                         <td className="px-6 py-4 text-right font-medium text-gray-900">
-                                            {record.priceSupplier ? formatCurrency(record.priceSupplier * record.stockQuantity) : "-"}
+                                            {record.priceSupplier ? formatCurrency(record.priceSupplier * Math.abs(record.stockQuantity)) : "-"}
                                         </td>
                                         <td className="px-6 py-4">
                                             <div className="flex items-center justify-center gap-2">
@@ -610,6 +650,43 @@ function Restock() {
                                 </div>
                             </div>
 
+                            {/* Adjustment Direction - Only show when ADJUSTMENT is selected */}
+                            {formData.recordType === 'ADJUSTMENT' && (
+                                <div>
+                                    <label className="block text-sm font-medium text-gray-700 mb-1">Adjustment Direction</label>
+                                    <div className="grid grid-cols-2 gap-2">
+                                        <button
+                                            type="button"
+                                            onClick={() => setFormData(prev => ({ ...prev, adjustmentDirection: 'add' }))}
+                                            className={`px-3 py-2 text-sm rounded-lg border transition-all flex items-center justify-center gap-2 ${
+                                                formData.adjustmentDirection === 'add'
+                                                    ? 'bg-green-500 text-white border-green-500'
+                                                    : 'bg-white text-gray-700 border-gray-300 hover:border-green-300'
+                                            }`}
+                                        >
+                                            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
+                                            </svg>
+                                            Add Stock
+                                        </button>
+                                        <button
+                                            type="button"
+                                            onClick={() => setFormData(prev => ({ ...prev, adjustmentDirection: 'remove' }))}
+                                            className={`px-3 py-2 text-sm rounded-lg border transition-all flex items-center justify-center gap-2 ${
+                                                formData.adjustmentDirection === 'remove'
+                                                    ? 'bg-red-500 text-white border-red-500'
+                                                    : 'bg-white text-gray-700 border-gray-300 hover:border-red-300'
+                                            }`}
+                                        >
+                                            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M20 12H4" />
+                                            </svg>
+                                            Remove Stock
+                                        </button>
+                                    </div>
+                                </div>
+                            )}
+
                             {/* Quantity and Price Row */}
                             <div className="grid grid-cols-2 gap-4">
                                 <div>
@@ -654,9 +731,14 @@ function Restock() {
                                 </div>
                             )}
 
-                            {/* Delivery Date */}
+                            {/* Date Field */}
                             <div>
-                                <label className="block text-sm font-medium text-gray-700 mb-1">Delivery Date</label>
+                                <label className="block text-sm font-medium text-gray-700 mb-1">
+                                    {formData.recordType === 'IN' ? 'Delivery Date' :
+                                     formData.recordType === 'OUT' ? 'Stock Out Date' :
+                                     formData.recordType === 'RETURN' ? 'Return Date' :
+                                     'Adjustment Date'}
+                                </label>
                                 <input
                                     type="date"
                                     name="deliveryDate"

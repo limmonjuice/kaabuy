@@ -45,7 +45,8 @@ function POS() {
             });
             if (response.ok) {
                 const data = await response.json();
-                setProducts(data.filter(p => p.currentStock > 0));
+                // Filter products with display stock available
+                setProducts(data.filter(p => (p.displayStock || 0) > 0));
             }
         } catch (err) {
             console.error("Failed to fetch products", err);
@@ -97,14 +98,18 @@ function POS() {
     // Cart functions
     const addToCart = (product) => {
         const existingItem = cart.find(item => item.productId === product.productId);
+        const displayStock = product.displayStock || 0;
 
         if (existingItem) {
-            if (existingItem.quantity < product.currentStock) {
+            if (existingItem.quantity < displayStock) {
                 setCart(cart.map(item =>
                     item.productId === product.productId
                         ? { ...item, quantity: item.quantity + 1 }
                         : item
                 ));
+            } else {
+                setError(`Only ${displayStock} items available on display for ${product.productName}`);
+                setTimeout(() => setError(""), 3000);
             }
         } else {
             setCart([...cart, {
@@ -112,7 +117,7 @@ function POS() {
                 productName: product.productName,
                 unitPrice: product.listPrice,
                 quantity: 1,
-                maxStock: product.currentStock
+                maxStock: displayStock
             }]);
         }
     };
@@ -291,7 +296,7 @@ function POS() {
                                         </div>
                                         <h3 className="font-medium text-gray-900 mb-1 line-clamp-2">{product.productName}</h3>
                                         <p className="text-lg font-bold text-orange-600">{formatCurrency(product.listPrice)}</p>
-                                        <p className="text-xs text-gray-500 mt-1">Stock: {product.currentStock} {product.unit}</p>
+                                        <p className="text-xs text-green-600 mt-1">Display: {product.displayStock || 0} {product.unit}</p>
                                     </button>
                                 );
                             })}
