@@ -17,10 +17,6 @@ function Products() {
         category: "",
         basePrice: "",
         listPrice: "",
-        currentStock: "0",
-        displayStock: "0",
-        maxDisplayStock: "20",
-        reorderLevel: "",
         unit: "pcs"
     });
     const [formError, setFormError] = useState("");
@@ -87,10 +83,6 @@ function Products() {
             category: "",
             basePrice: "",
             listPrice: "",
-            currentStock: "0",
-            displayStock: "0",
-            maxDisplayStock: "20",
-            reorderLevel: "",
             unit: "pcs"
         });
         setFormError("");
@@ -105,10 +97,6 @@ function Products() {
             category: product.category || "",
             basePrice: product.basePrice,
             listPrice: product.listPrice,
-            currentStock: product.currentStock || 0,
-            displayStock: product.displayStock || 0,
-            maxDisplayStock: product.maxDisplayStock || 20,
-            reorderLevel: product.reorderLevel,
             unit: product.unit || "pcs"
         });
         setFormError("");
@@ -142,11 +130,7 @@ function Products() {
                 body: JSON.stringify({
                     ...formData,
                     basePrice: parseFloat(formData.basePrice) || 0,
-                    listPrice: parseFloat(formData.listPrice),
-                    currentStock: parseInt(formData.currentStock) || 0,
-                    displayStock: parseInt(formData.displayStock) || 0,
-                    maxDisplayStock: parseInt(formData.maxDisplayStock) || 20,
-                    reorderLevel: parseInt(formData.reorderLevel) || 10
+                    listPrice: parseFloat(formData.listPrice)
                 })
             });
 
@@ -182,40 +166,6 @@ function Products() {
         } catch (err) {
             alert(err.message);
         }
-    };
-
-    // Refill display stock
-    const handleRefillDisplay = async (productId, productName) => {
-        if (!confirm(`Refill display stock for ${productName}?`)) return;
-
-        try {
-            const response = await fetch(`${API_URL}/api/products/${productId}/refill-display`, {
-                method: "POST",
-                headers: {
-                    "Authorization": `Bearer ${token}`
-                }
-            });
-
-            if (!response.ok) {
-                const errorData = await response.json();
-                throw new Error(errorData.error || "Failed to refill display stock");
-            }
-
-            fetchProducts();
-            alert(`Display stock refilled for ${productName}`);
-        } catch (err) {
-            alert(err.message);
-        }
-    };
-
-    // Get stock status badge
-    const getStockBadge = (product) => {
-        if (product.currentStock === 0) {
-            return <span className="px-2 py-1 text-xs font-medium rounded-full bg-red-100 text-red-700">Out of Stock</span>;
-        } else if (product.isLowStock || product.currentStock <= product.reorderLevel) {
-            return <span className="px-2 py-1 text-xs font-medium rounded-full bg-yellow-100 text-yellow-700">Low Stock</span>;
-        }
-        return <span className="px-2 py-1 text-xs font-medium rounded-full bg-green-100 text-green-700">In Stock</span>;
     };
 
     return (
@@ -303,7 +253,6 @@ function Products() {
                                     <th className="text-left px-6 py-4 text-xs font-semibold text-gray-500 uppercase tracking-wider">Category</th>
                                     <th className="text-right px-6 py-4 text-xs font-semibold text-gray-500 uppercase tracking-wider">Base Price</th>
                                     <th className="text-right px-6 py-4 text-xs font-semibold text-gray-500 uppercase tracking-wider">List Price</th>
-                                    <th className="text-center px-6 py-4 text-xs font-semibold text-gray-500 uppercase tracking-wider">Display Stock</th>
                                     <th className="text-center px-6 py-4 text-xs font-semibold text-gray-500 uppercase tracking-wider">Actions</th>
                                 </tr>
                             </thead>
@@ -325,23 +274,8 @@ function Products() {
                                         <td className="px-6 py-4 text-right font-medium text-gray-900">
                                             ₱{product.listPrice?.toFixed(2)}
                                         </td>
-                                        <td className="px-6 py-4 text-center">
-                                            <span className="font-medium text-green-600">
-                                                {product.displayStock || 0}/{product.maxDisplayStock || 20}
-                                            </span>
-                                        </td>
                                         <td className="px-6 py-4">
                                             <div className="flex items-center justify-center gap-2">
-                                                <button
-                                                    onClick={() => handleRefillDisplay(product.productId, product.productName)}
-                                                    className="p-2 text-gray-500 hover:text-blue-500 hover:bg-blue-50 rounded-lg transition-colors"
-                                                    title="Refill Display Stock"
-                                                    disabled={product.currentStock === 0}
-                                                >
-                                                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
-                                                    </svg>
-                                                </button>
                                                 <button
                                                     onClick={() => handleEdit(product)}
                                                     className="p-2 text-gray-500 hover:text-orange-500 hover:bg-orange-50 rounded-lg transition-colors"
@@ -473,34 +407,6 @@ function Products() {
                                             placeholder="0.00"
                                         />
                                     </div>
-                                </div>
-                            </div>
-
-                            {/* Display Stock Row */}
-                            <div className="grid grid-cols-2 gap-4">
-                                <div>
-                                    <label className="block text-sm font-medium text-gray-700 mb-1">Display Stock</label>
-                                    <input
-                                        type="number"
-                                        name="displayStock"
-                                        value={formData.displayStock}
-                                        onChange={handleInputChange}
-                                        min="0"
-                                        className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-transparent"
-                                        placeholder="0"
-                                    />
-                                </div>
-                                <div>
-                                    <label className="block text-sm font-medium text-gray-700 mb-1">Max Display Stock</label>
-                                    <input
-                                        type="number"
-                                        name="maxDisplayStock"
-                                        value={formData.maxDisplayStock}
-                                        onChange={handleInputChange}
-                                        min="0"
-                                        className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-transparent"
-                                        placeholder="20"
-                                    />
                                 </div>
                             </div>
 

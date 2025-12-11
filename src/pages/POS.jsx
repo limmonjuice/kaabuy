@@ -20,6 +20,14 @@ function POS() {
     const [selectedCustomer, setSelectedCustomer] = useState(null);
     const [showCustomerSearch, setShowCustomerSearch] = useState(false);
     const [customerSearchTerm, setCustomerSearchTerm] = useState("");
+    const [showAddCustomer, setShowAddCustomer] = useState(false);
+    const [newCustomer, setNewCustomer] = useState({
+        customerName: "",
+        contactNumber: "",
+        email: "",
+        address: ""
+    });
+    const [customerError, setCustomerError] = useState("");
 
     // Payment state
     const [paymentMethod, setPaymentMethod] = useState("Cash");
@@ -45,8 +53,8 @@ function POS() {
             });
             if (response.ok) {
                 const data = await response.json();
-                // Filter products with display stock available
-                setProducts(data.filter(p => (p.displayStock || 0) > 0));
+                // Filter products with stock available
+                setProducts(data.filter(p => (p.currentStock || 0) > 0));
             }
         } catch (err) {
             console.error("Failed to fetch products", err);
@@ -98,17 +106,17 @@ function POS() {
     // Cart functions
     const addToCart = (product) => {
         const existingItem = cart.find(item => item.productId === product.productId);
-        const displayStock = product.displayStock || 0;
+        const currentStock = product.currentStock || 0;
 
         if (existingItem) {
-            if (existingItem.quantity < displayStock) {
+            if (existingItem.quantity < currentStock) {
                 setCart(cart.map(item =>
                     item.productId === product.productId
                         ? { ...item, quantity: item.quantity + 1 }
                         : item
                 ));
             } else {
-                setError(`Only ${displayStock} items available on display for ${product.productName}`);
+                setError(`Only ${currentStock} items available in stock for ${product.productName}`);
                 setTimeout(() => setError(""), 3000);
             }
         } else {
@@ -117,7 +125,7 @@ function POS() {
                 productName: product.productName,
                 unitPrice: product.listPrice,
                 quantity: 1,
-                maxStock: displayStock
+                maxStock: currentStock
             }]);
         }
     };
@@ -135,6 +143,55 @@ function POS() {
                     ? { ...i, quantity: newQuantity }
                     : i
             ));
+        } else if (item && newQuantity > item.maxStock) {
+            setError(`Only ${item.maxStock} items available`);
+            setTimeout(() => setError(""), 3000);
+        }
+    };
+
+    const handleQuantityInputChange = (productId, value) => {
+        // Allow empty string for clearing
+        if (value === "") {
+            setCart(cart.map(i =>
+                i.productId === productId
+                    ? { ...i, quantity: "" }
+                    : i
+            ));
+            return;
+        }
+
+        // Parse and validate
+        const newQuantity = parseInt(value);
+        if (!isNaN(newQuantity) && newQuantity >= 1) {
+            const item = cart.find(i => i.productId === productId);
+            if (item && newQuantity <= item.maxStock) {
+                setCart(cart.map(i =>
+                    i.productId === productId
+                        ? { ...i, quantity: newQuantity }
+                        : i
+                ));
+            } else if (item && newQuantity > item.maxStock) {
+                // Set to max if exceeded
+                setCart(cart.map(i =>
+                    i.productId === productId
+                        ? { ...i, quantity: item.maxStock }
+                        : i
+                ));
+                setError(`Only ${item.maxStock} items available`);
+                setTimeout(() => setError(""), 3000);
+            }
+        }
+    };
+
+    const handleQuantityInputBlur = (productId) => {
+        const item = cart.find(i => i.productId === productId);
+        if (item && (item.quantity === "" || item.quantity < 1)) {
+            // Reset to 1 if empty or invalid
+            setCart(cart.map(i =>
+                i.productId === productId
+                    ? { ...i, quantity: 1 }
+                    : i
+            ));
         }
     };
 
@@ -150,7 +207,7 @@ function POS() {
     };
 
     // Calculate totals
-    const subtotal = cart.reduce((sum, item) => sum + (item.unitPrice * item.quantity), 0);
+    const subtotal = cart.reduce((sum, item) => sum + (item.unitPrice * (parseInt(item.quantity) || 0)), 0);
     const total = subtotal;
     const change = paymentMethod === "Cash" && amountPaid ? parseFloat(amountPaid) - total : 0;
 
@@ -182,7 +239,7 @@ function POS() {
                 amountPaid: paymentMethod === "Cash" ? parseFloat(amountPaid) : total,
                 items: cart.map(item => ({
                     productId: item.productId,
-                    quantity: item.quantity
+                    quantity: parseInt(item.quantity) || 0
                 }))
             };
 
@@ -224,6 +281,41 @@ function POS() {
             hour: '2-digit',
             minute: '2-digit'
         });
+    };
+
+    const handleAddCustomer = async (e) => {
+        e.preventDefault();
+        setCustomerError("");
+
+        if (!newCustomer.customerName.trim()) {
+            setCustomerError("Customer name is required");
+            return;
+        }
+
+        try {
+            const response = await fetch(`${API_URL}/api/customers`, {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json",
+                    "Authorization": `Bearer ${token}`
+                },
+                body: JSON.stringify(newCustomer)
+            });
+
+            if (!response.ok) {
+                const errorData = await response.json();
+                throw new Error(errorData.error || "Failed to add customer");
+            }
+
+            const savedCustomer = await response.json();
+            setCustomers([...customers, savedCustomer]);
+            setSelectedCustomer(savedCustomer);
+            setShowAddCustomer(false);
+            setNewCustomer({ customerName: "", contactNumber: "", email: "", address: "" });
+            setShowCustomerSearch(false);
+        } catch (err) {
+            setCustomerError(err.message);
+        }
     };
 
     return (
@@ -296,7 +388,7 @@ function POS() {
                                         </div>
                                         <h3 className="font-medium text-gray-900 mb-1 line-clamp-2">{product.productName}</h3>
                                         <p className="text-lg font-bold text-orange-600">{formatCurrency(product.listPrice)}</p>
-                                        <p className="text-xs text-green-600 mt-1">Display: {product.displayStock || 0} {product.unit}</p>
+                                        <p className="text-xs text-green-600 mt-1">Stock: {product.currentStock || 0} {product.unit}</p>
                                     </button>
                                 );
                             })}
@@ -366,6 +458,18 @@ function POS() {
                                         </svg>
                                         Walk-in Customer
                                     </button>
+                                    <button
+                                        onClick={() => {
+                                            setShowAddCustomer(true);
+                                            setShowCustomerSearch(false);
+                                        }}
+                                        className="w-full px-4 py-2 text-left hover:bg-orange-50 flex items-center text-orange-600 font-medium border-b border-gray-200"
+                                    >
+                                        <svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
+                                        </svg>
+                                        Add New Customer
+                                    </button>
                                     {filteredCustomers.map(customer => (
                                         <button
                                             key={customer.customerId}
@@ -424,17 +528,25 @@ function POS() {
                                     <div className="flex items-center justify-between">
                                         <div className="flex items-center gap-2">
                                             <button
-                                                onClick={() => updateQuantity(item.productId, item.quantity - 1)}
+                                                onClick={() => updateQuantity(item.productId, (parseInt(item.quantity) || 1) - 1)}
                                                 className="w-8 h-8 flex items-center justify-center bg-white border border-gray-300 rounded-lg hover:bg-gray-100"
                                             >
                                                 <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M20 12H4" />
                                                 </svg>
                                             </button>
-                                            <span className="w-8 text-center font-medium">{item.quantity}</span>
+                                            <input
+                                                type="number"
+                                                min="1"
+                                                max={item.maxStock}
+                                                value={item.quantity}
+                                                onChange={(e) => handleQuantityInputChange(item.productId, e.target.value)}
+                                                onBlur={() => handleQuantityInputBlur(item.productId)}
+                                                className="w-14 text-center font-medium py-1 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-transparent [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
+                                            />
                                             <button
-                                                onClick={() => updateQuantity(item.productId, item.quantity + 1)}
-                                                disabled={item.quantity >= item.maxStock}
+                                                onClick={() => updateQuantity(item.productId, (parseInt(item.quantity) || 0) + 1)}
+                                                disabled={(parseInt(item.quantity) || 0) >= item.maxStock}
                                                 className="w-8 h-8 flex items-center justify-center bg-white border border-gray-300 rounded-lg hover:bg-gray-100 disabled:opacity-50 disabled:cursor-not-allowed"
                                             >
                                                 <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -443,7 +555,7 @@ function POS() {
                                             </button>
                                         </div>
                                         <span className="font-semibold text-gray-900">
-                                            {formatCurrency(item.unitPrice * item.quantity)}
+                                            {formatCurrency(item.unitPrice * (parseInt(item.quantity) || 0))}
                                         </span>
                                     </div>
                                 </div>
@@ -457,7 +569,7 @@ function POS() {
                     {/* Summary */}
                     <div className="space-y-2 mb-4">
                         <div className="flex justify-between text-sm">
-                            <span className="text-gray-600">Subtotal ({cart.reduce((sum, item) => sum + item.quantity, 0)} items)</span>
+                            <span className="text-gray-600">Subtotal ({cart.reduce((sum, item) => sum + (parseInt(item.quantity) || 0), 0)} items)</span>
                             <span className="font-medium">{formatCurrency(subtotal)}</span>
                         </div>
                         <div className="flex justify-between text-lg font-bold">
@@ -557,6 +669,98 @@ function POS() {
                     </button>
                 </div>
             </div>
+
+            {/* Add Customer Modal */}
+            {showAddCustomer && (
+                <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+                    <div className="bg-white rounded-2xl shadow-xl w-full max-w-md">
+                        <div className="flex items-center justify-between p-6 border-b border-gray-200">
+                            <h2 className="text-xl font-bold text-gray-900">Add New Customer</h2>
+                            <button
+                                onClick={() => {
+                                    setShowAddCustomer(false);
+                                    setCustomerError("");
+                                    setNewCustomer({ customerName: "", contactNumber: "", email: "", address: "" });
+                                }}
+                                className="p-2 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-lg"
+                            >
+                                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                                </svg>
+                            </button>
+                        </div>
+                        <form onSubmit={handleAddCustomer} className="p-6 space-y-4">
+                            {customerError && (
+                                <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-xl text-sm">
+                                    {customerError}
+                                </div>
+                            )}
+                            <div>
+                                <label className="block text-sm font-medium text-gray-700 mb-1">
+                                    Customer Name <span className="text-red-500">*</span>
+                                </label>
+                                <input
+                                    type="text"
+                                    value={newCustomer.customerName}
+                                    onChange={(e) => setNewCustomer({...newCustomer, customerName: e.target.value})}
+                                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500"
+                                    placeholder="Enter customer name"
+                                    autoFocus
+                                />
+                            </div>
+                            <div>
+                                <label className="block text-sm font-medium text-gray-700 mb-1">Contact Number</label>
+                                <input
+                                    type="text"
+                                    value={newCustomer.contactNumber}
+                                    onChange={(e) => setNewCustomer({...newCustomer, contactNumber: e.target.value})}
+                                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500"
+                                    placeholder="09123456789"
+                                />
+                            </div>
+                            <div>
+                                <label className="block text-sm font-medium text-gray-700 mb-1">Email</label>
+                                <input
+                                    type="email"
+                                    value={newCustomer.email}
+                                    onChange={(e) => setNewCustomer({...newCustomer, email: e.target.value})}
+                                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500"
+                                    placeholder="customer@email.com"
+                                />
+                            </div>
+                            <div>
+                                <label className="block text-sm font-medium text-gray-700 mb-1">Address</label>
+                                <textarea
+                                    value={newCustomer.address}
+                                    onChange={(e) => setNewCustomer({...newCustomer, address: e.target.value})}
+                                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500"
+                                    rows="2"
+                                    placeholder="Enter address"
+                                />
+                            </div>
+                            <div className="flex items-center justify-end gap-3 pt-4 border-t border-gray-200">
+                                <button
+                                    type="button"
+                                    onClick={() => {
+                                        setShowAddCustomer(false);
+                                        setCustomerError("");
+                                        setNewCustomer({ customerName: "", contactNumber: "", email: "", address: "" });
+                                    }}
+                                    className="px-4 py-2 text-gray-700 hover:bg-gray-100 rounded-lg"
+                                >
+                                    Cancel
+                                </button>
+                                <button
+                                    type="submit"
+                                    className="px-6 py-2 bg-gradient-to-r from-orange-400 to-orange-500 text-white rounded-lg hover:from-orange-500 hover:to-orange-600"
+                                >
+                                    Add Customer
+                                </button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            )}
 
             {/* Receipt Modal */}
             {showReceipt && lastOrder && (

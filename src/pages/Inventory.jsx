@@ -115,10 +115,11 @@ function Inventory() {
 
     const getRecordTypeBadge = (type) => {
         const styles = {
+            'RECEIVED': 'bg-green-100 text-green-700',
+            'WITHDRAWN': 'bg-red-100 text-red-700',
+            // Legacy support
             'IN': 'bg-green-100 text-green-700',
-            'OUT': 'bg-red-100 text-red-700',
-            'ADJUSTMENT': 'bg-blue-100 text-blue-700',
-            'RETURN': 'bg-yellow-100 text-yellow-700'
+            'OUT': 'bg-red-100 text-red-700'
         };
         return styles[type] || 'bg-gray-100 text-gray-700';
     };
@@ -333,13 +334,6 @@ function Inventory() {
                                                     </div>
                                                 </div>
 
-                                                {/* Display Stock */}
-                                                <div className="w-32">
-                                                    <p className="text-sm text-gray-500">Display Stock</p>
-                                                    <p className="font-semibold text-green-600">
-                                                        {product.displayStock || 0} / {product.maxDisplayStock || 20}
-                                                    </p>
-                                                </div>
 
                                                 {/* Stock Value */}
                                                 <div className="text-right">
@@ -387,14 +381,13 @@ function Inventory() {
                                                                     </td>
                                                                     <td className="px-4 py-2 text-center">
                                                                         <span className={`font-medium ${
-                                                                            record.recordType === 'IN' ? 'text-green-600' :
-                                                                            record.recordType === 'OUT' || record.recordType === 'RETURN' ? 'text-red-600' :
-                                                                            record.stockQuantity >= 0 ? 'text-green-600' : 'text-red-600'
+                                                                            record.recordType === 'RECEIVED' || record.recordType === 'IN' ? 'text-green-600' :
+                                                                            record.recordType === 'WITHDRAWN' || record.recordType === 'OUT' ? 'text-red-600' :
+                                                                            'text-gray-600'
                                                                         }`}>
-                                                                            {record.recordType === 'IN' ? '+' : ''}
-                                                                            {record.recordType === 'OUT' || record.recordType === 'RETURN' ? '-' : ''}
-                                                                            {record.recordType === 'ADJUSTMENT' ? (record.stockQuantity >= 0 ? '+' : '') : ''}
-                                                                            {record.recordType === 'ADJUSTMENT' ? record.stockQuantity : Math.abs(record.stockQuantity)}
+                                                                            {(record.recordType === 'RECEIVED' || record.recordType === 'IN') ? '+' : ''}
+                                                                            {(record.recordType === 'WITHDRAWN' || record.recordType === 'OUT') ? '-' : ''}
+                                                                            {Math.abs(record.stockQuantity)}
                                                                         </span>
                                                                     </td>
                                                                     <td className="px-4 py-2 text-gray-600">

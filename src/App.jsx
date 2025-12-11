@@ -7,6 +7,7 @@ import Products from "./pages/Products";
 import Inventory from "./pages/Inventory";
 import Transactions from "./pages/Transactions";
 import Customers from "./pages/Customers";
+import Suppliers from "./pages/Suppliers";
 import POS from "./pages/POS";
 import Restock from "./pages/Restock";
 import Auth from "./pages/Auth";
@@ -38,6 +39,7 @@ const App = () =>{
                 <Route path="/restock" element={<Restock/>}/>
                 <Route path="/transactions" element={<Transactions/>}/>
                 <Route path="/customers" element={<Customers/>}/>
+                <Route path="/suppliers" element={<Suppliers/>}/>
               </Routes>
             </main>
           </div>

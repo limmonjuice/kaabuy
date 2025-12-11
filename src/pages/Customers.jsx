@@ -14,6 +14,9 @@ function Customers() {
     const [showPaymentModal, setShowPaymentModal] = useState(false);
     const [editingCustomer, setEditingCustomer] = useState(null);
     const [selectedCustomer, setSelectedCustomer] = useState(null);
+    const [expandedCustomer, setExpandedCustomer] = useState(null);
+    const [customerTransactions, setCustomerTransactions] = useState({});
+    const [paymentMethodFilters, setPaymentMethodFilters] = useState({});
     const [formData, setFormData] = useState({
         customerName: "",
         contactNumber: "",
@@ -112,6 +115,31 @@ function Customers() {
             fetchCustomersWithUtang();
         } else {
             fetchCustomers();
+        }
+    };
+
+    const fetchTransactionsForCustomer = async (customerId) => {
+        try {
+            const response = await fetch(`${API_URL}/api/transactions/customer/${customerId}`, {
+                headers: { "Authorization": `Bearer ${token}` }
+            });
+            if (response.ok) {
+                const data = await response.json();
+                setCustomerTransactions(prev => ({ ...prev, [customerId]: data }));
+            }
+        } catch (err) {
+            console.error("Failed to fetch transactions", err);
+        }
+    };
+
+    const handleExpandCustomer = (customerId) => {
+        if (expandedCustomer === customerId) {
+            setExpandedCustomer(null);
+        } else {
+            setExpandedCustomer(customerId);
+            if (!customerTransactions[customerId]) {
+                fetchTransactionsForCustomer(customerId);
+            }
         }
     };
 
@@ -266,6 +294,22 @@ function Customers() {
         return <span className="px-2 py-1 text-xs font-medium rounded-full bg-yellow-100 text-yellow-700">Has Utang</span>;
     };
 
+    const getPaymentMethodBadge = (method) => {
+        const styles = {
+            'CASH': 'bg-green-100 text-green-700',
+            'UTANG': 'bg-red-100 text-red-700',
+            'PAYMENT': 'bg-emerald-100 text-emerald-700',
+            'GCASH': 'bg-blue-100 text-blue-700',
+            'CARD': 'bg-purple-100 text-purple-700'
+        };
+        return styles[method] || 'bg-gray-100 text-gray-700';
+    };
+
+    const formatCurrency = (amount) => {
+        if (!amount) return "₱0.00";
+        return `₱${parseFloat(amount).toLocaleString('en-US', { minimumFractionDigits: 2 })}`;
+    };
+
     return (
         <div className="p-6">
             {/* Page Header */}
@@ -409,53 +453,64 @@ function Customers() {
                         </button>
                     </div>
                 ) : (
-                    <div className="overflow-x-auto">
-                        <table className="w-full">
-                            <thead className="bg-gray-50 border-b border-gray-200">
-                                <tr>
-                                    <th className="text-left px-6 py-4 text-xs font-semibold text-gray-500 uppercase tracking-wider">Customer</th>
-                                    <th className="text-left px-6 py-4 text-xs font-semibold text-gray-500 uppercase tracking-wider">Contact</th>
-                                    <th className="text-left px-6 py-4 text-xs font-semibold text-gray-500 uppercase tracking-wider">Address</th>
-                                    <th className="text-center px-6 py-4 text-xs font-semibold text-gray-500 uppercase tracking-wider">Transactions</th>
-                                    <th className="text-right px-6 py-4 text-xs font-semibold text-gray-500 uppercase tracking-wider">Utang</th>
-                                    <th className="text-center px-6 py-4 text-xs font-semibold text-gray-500 uppercase tracking-wider">Status</th>
-                                    <th className="text-center px-6 py-4 text-xs font-semibold text-gray-500 uppercase tracking-wider">Actions</th>
-                                </tr>
-                            </thead>
-                            <tbody className="divide-y divide-gray-100">
-                                {customers.map((customer) => (
-                                    <tr key={customer.customerId} className="hover:bg-gray-50 transition-colors">
-                                        <td className="px-6 py-4">
-                                            <div className="flex items-center">
-                                                <div className="w-10 h-10 bg-gradient-to-br from-orange-400 to-orange-600 rounded-full flex items-center justify-center text-white font-semibold mr-3">
+                    <div className="divide-y divide-gray-100">
+                        {customers.map((customer) => {
+                            const isExpanded = expandedCustomer === customer.customerId;
+                            const transactions = customerTransactions[customer.customerId] || [];
+                            const currentFilter = paymentMethodFilters[customer.customerId] || "";
+                            const filteredTransactions = currentFilter
+                                ? transactions.filter(t => t.paymentMethod && t.paymentMethod.toUpperCase() === currentFilter.toUpperCase())
+                                : transactions;
+
+                            return (
+                                <div key={customer.customerId} className="hover:bg-gray-50 transition-colors">
+                                    {/* Customer Row */}
+                                    <div className="p-4 cursor-pointer" onClick={() => handleExpandCustomer(customer.customerId)}>
+                                        <div className="flex items-center justify-between">
+                                            <div className="flex items-center gap-4 flex-1">
+                                                {/* Expand Icon */}
+                                                <svg
+                                                    className={`w-5 h-5 text-gray-400 transition-transform ${isExpanded ? 'rotate-90' : ''}`}
+                                                    fill="none"
+                                                    stroke="currentColor"
+                                                    viewBox="0 0 24 24"
+                                                >
+                                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+                                                </svg>
+
+                                                {/* Customer Info */}
+                                                <div className="w-10 h-10 bg-gradient-to-br from-orange-400 to-orange-600 rounded-full flex items-center justify-center text-white font-semibold">
                                                     {customer.customerName?.charAt(0).toUpperCase()}
                                                 </div>
-                                                <div>
+                                                <div className="flex-1">
                                                     <div className="font-medium text-gray-900">{customer.customerName}</div>
-                                                    <div className="text-xs text-gray-500">Since {formatDate(customer.createdAt)}</div>
+                                                    <div className="text-xs text-gray-500">
+                                                        {customer.contactNumber || "No contact"} • {customer.email || "No email"}
+                                                    </div>
+                                                </div>
+
+                                                {/* Transaction Count */}
+                                                <div className="text-center px-4">
+                                                    <p className="text-sm text-gray-500">Transactions</p>
+                                                    <p className="font-medium text-gray-900">{customer.transactionCount || 0}</p>
+                                                </div>
+
+                                                {/* Utang */}
+                                                <div className="text-right px-4">
+                                                    <p className="text-sm text-gray-500">Utang</p>
+                                                    <p className={`font-semibold ${parseFloat(customer.totalUtang) > 0 ? 'text-red-600' : 'text-gray-900'}`}>
+                                                        {formatCurrency(customer.totalUtang)}
+                                                    </p>
+                                                </div>
+
+                                                {/* Status Badge */}
+                                                <div>
+                                                    {getUtangBadge(customer.totalUtang)}
                                                 </div>
                                             </div>
-                                        </td>
-                                        <td className="px-6 py-4">
-                                            <div className="text-sm text-gray-900">{customer.contactNumber || "-"}</div>
-                                            <div className="text-xs text-gray-500">{customer.email || "-"}</div>
-                                        </td>
-                                        <td className="px-6 py-4">
-                                            <div className="text-sm text-gray-600 max-w-xs truncate">{customer.address || "-"}</div>
-                                        </td>
-                                        <td className="px-6 py-4 text-center">
-                                            <span className="font-medium text-gray-900">{customer.transactionCount || 0}</span>
-                                        </td>
-                                        <td className="px-6 py-4 text-right">
-                                            <span className={`font-semibold ${parseFloat(customer.totalUtang) > 0 ? 'text-red-600' : 'text-gray-900'}`}>
-                                                ₱{parseFloat(customer.totalUtang || 0).toLocaleString('en-US', { minimumFractionDigits: 2 })}
-                                            </span>
-                                        </td>
-                                        <td className="px-6 py-4 text-center">
-                                            {getUtangBadge(customer.totalUtang)}
-                                        </td>
-                                        <td className="px-6 py-4">
-                                            <div className="flex items-center justify-center gap-1">
+
+                                            {/* Actions */}
+                                            <div className="flex items-center gap-1 ml-4" onClick={(e) => e.stopPropagation()}>
                                                 {parseFloat(customer.totalUtang) > 0 && (
                                                     <button
                                                         onClick={() => openPaymentModal(customer)}
@@ -486,11 +541,98 @@ function Customers() {
                                                     </svg>
                                                 </button>
                                             </div>
-                                        </td>
-                                    </tr>
-                                ))}
-                            </tbody>
-                        </table>
+                                        </div>
+                                    </div>
+
+                                    {/* Expanded Transactions */}
+                                    {isExpanded && (
+                                        <div className="px-4 pb-4 bg-gray-50">
+                                            <div className="ml-9 bg-white rounded-lg border border-gray-200 overflow-hidden">
+                                                <div className="px-4 py-3 bg-gray-100 border-b border-gray-200 flex items-center justify-between">
+                                                    <div>
+                                                        <h4 className="font-medium text-gray-700">Transaction History</h4>
+                                                        {currentFilter && (
+                                                            <p className="text-xs text-gray-500 mt-1">
+                                                                Showing {filteredTransactions.length} of {transactions.length} transactions
+                                                            </p>
+                                                        )}
+                                                    </div>
+                                                    {/* Payment Method Filter */}
+                                                    <select
+                                                        value={currentFilter}
+                                                        onChange={(e) => setPaymentMethodFilters({
+                                                            ...paymentMethodFilters,
+                                                            [customer.customerId]: e.target.value
+                                                        })}
+                                                        className="px-3 py-1 text-sm border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500 bg-white"
+                                                        onClick={(e) => e.stopPropagation()}
+                                                    >
+                                                        <option value="">All Transactions</option>
+                                                        <option value="CASH">Cash Purchases</option>
+                                                        <option value="UTANG">Utang (Credit)</option>
+                                                        <option value="PAYMENT">Utang Payments</option>
+                                                        <option value="GCASH">GCash</option>
+                                                        <option value="CARD">Card</option>
+                                                    </select>
+                                                </div>
+                                                {filteredTransactions.length === 0 ? (
+                                                    <div className="p-4 text-center text-gray-500 text-sm">
+                                                        {currentFilter
+                                                            ? `No ${currentFilter} transactions found for this customer`
+                                                            : "No transactions found for this customer"
+                                                        }
+                                                    </div>
+                                                ) : (
+                                                    <table className="w-full">
+                                                        <thead className="bg-gray-50 text-xs text-gray-500 uppercase">
+                                                            <tr>
+                                                                <th className="text-left px-4 py-2">Date</th>
+                                                                <th className="text-left px-4 py-2">Transaction ID</th>
+                                                                <th className="text-center px-4 py-2">Payment Method</th>
+                                                                <th className="text-center px-4 py-2">Items</th>
+                                                                <th className="text-right px-4 py-2">Total Amount</th>
+                                                                <th className="text-right px-4 py-2">Amount Paid</th>
+                                                            </tr>
+                                                        </thead>
+                                                        <tbody className="divide-y divide-gray-100 text-sm">
+                                                            {filteredTransactions.slice(0, 10).map((transaction) => (
+                                                                <tr key={transaction.transactionId}>
+                                                                    <td className="px-4 py-2 text-gray-600">
+                                                                        {formatDate(transaction.transactionDate)}
+                                                                    </td>
+                                                                    <td className="px-4 py-2 text-gray-600">
+                                                                        #{transaction.transactionId}
+                                                                    </td>
+                                                                    <td className="px-4 py-2 text-center">
+                                                                        <span className={`px-2 py-0.5 text-xs font-medium rounded-full ${getPaymentMethodBadge(transaction.paymentMethod)}`}>
+                                                                            {transaction.paymentMethod}
+                                                                        </span>
+                                                                    </td>
+                                                                    <td className="px-4 py-2 text-center text-gray-600">
+                                                                        {transaction.itemCount || 0}
+                                                                    </td>
+                                                                    <td className="px-4 py-2 text-right font-medium text-gray-900">
+                                                                        {formatCurrency(transaction.totalAmount)}
+                                                                    </td>
+                                                                    <td className="px-4 py-2 text-right text-gray-600">
+                                                                        {formatCurrency(transaction.amountPaid)}
+                                                                    </td>
+                                                                </tr>
+                                                            ))}
+                                                        </tbody>
+                                                    </table>
+                                                )}
+                                                {filteredTransactions.length > 10 && (
+                                                    <div className="px-4 py-2 bg-gray-50 text-center text-sm text-gray-500 border-t border-gray-200">
+                                                        Showing 10 of {filteredTransactions.length} transactions
+                                                    </div>
+                                                )}
+                                            </div>
+                                        </div>
+                                    )}
+                                </div>
+                            );
+                        })}
                     </div>
                 )}
             </div>
