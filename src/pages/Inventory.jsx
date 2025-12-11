@@ -314,10 +314,10 @@ function Inventory() {
 
                                             {/* Stock Info */}
                                             <div className="flex items-center gap-8">
-                                                {/* Warehouse Stock */}
+                                                {/* Backroom Stock */}
                                                 <div className="w-48">
                                                     <div className="flex items-center justify-between text-sm mb-1">
-                                                        <span className="text-gray-500">Warehouse Stock</span>
+                                                        <span className="text-gray-500">Backroom Stock</span>
                                                         <span className="font-medium text-blue-600">
                                                             {product.currentStock} {product.unit}
                                                         </span>

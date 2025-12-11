@@ -303,9 +303,7 @@ function Products() {
                                     <th className="text-left px-6 py-4 text-xs font-semibold text-gray-500 uppercase tracking-wider">Category</th>
                                     <th className="text-right px-6 py-4 text-xs font-semibold text-gray-500 uppercase tracking-wider">Base Price</th>
                                     <th className="text-right px-6 py-4 text-xs font-semibold text-gray-500 uppercase tracking-wider">List Price</th>
-                                    <th className="text-center px-6 py-4 text-xs font-semibold text-gray-500 uppercase tracking-wider">Warehouse</th>
-                                    <th className="text-center px-6 py-4 text-xs font-semibold text-gray-500 uppercase tracking-wider">Display</th>
-                                    <th className="text-center px-6 py-4 text-xs font-semibold text-gray-500 uppercase tracking-wider">Status</th>
+                                    <th className="text-center px-6 py-4 text-xs font-semibold text-gray-500 uppercase tracking-wider">Display Stock</th>
                                     <th className="text-center px-6 py-4 text-xs font-semibold text-gray-500 uppercase tracking-wider">Actions</th>
                                 </tr>
                             </thead>
@@ -328,15 +326,9 @@ function Products() {
                                             ₱{product.listPrice?.toFixed(2)}
                                         </td>
                                         <td className="px-6 py-4 text-center">
-                                            <span className="font-medium text-blue-600">{product.currentStock}</span>
-                                        </td>
-                                        <td className="px-6 py-4 text-center">
                                             <span className="font-medium text-green-600">
                                                 {product.displayStock || 0}/{product.maxDisplayStock || 20}
                                             </span>
-                                        </td>
-                                        <td className="px-6 py-4 text-center">
-                                            {getStockBadge(product)}
                                         </td>
                                         <td className="px-6 py-4">
                                             <div className="flex items-center justify-center gap-2">
@@ -484,20 +476,8 @@ function Products() {
                                 </div>
                             </div>
 
-                            {/* Stock Row - Added warehouse and display stock */}
+                            {/* Display Stock Row */}
                             <div className="grid grid-cols-2 gap-4">
-                                <div>
-                                    <label className="block text-sm font-medium text-gray-700 mb-1">Warehouse Stock</label>
-                                    <input
-                                        type="number"
-                                        name="currentStock"
-                                        value={formData.currentStock}
-                                        onChange={handleInputChange}
-                                        min="0"
-                                        className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-transparent"
-                                        placeholder="0"
-                                    />
-                                </div>
                                 <div>
                                     <label className="block text-sm font-medium text-gray-700 mb-1">Display Stock</label>
                                     <input
@@ -510,10 +490,6 @@ function Products() {
                                         placeholder="0"
                                     />
                                 </div>
-                            </div>
-
-                            {/* Max Display & Reorder Level Row */}
-                            <div className="grid grid-cols-2 gap-4">
                                 <div>
                                     <label className="block text-sm font-medium text-gray-700 mb-1">Max Display Stock</label>
                                     <input
@@ -524,18 +500,6 @@ function Products() {
                                         min="0"
                                         className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-transparent"
                                         placeholder="20"
-                                    />
-                                </div>
-                                <div>
-                                    <label className="block text-sm font-medium text-gray-700 mb-1">Reorder Level</label>
-                                    <input
-                                        type="number"
-                                        name="reorderLevel"
-                                        value={formData.reorderLevel}
-                                        onChange={handleInputChange}
-                                        min="0"
-                                        className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-transparent"
-                                        placeholder="10"
                                     />
                                 </div>
                             </div>

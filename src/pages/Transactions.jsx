@@ -376,17 +376,6 @@ function Transactions() {
                         >
                             Clear
                         </button>
-
-                        {/* Add Transaction Button */}
-                        <button
-                            onClick={handleAddNew}
-                            className="flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-orange-400 to-orange-500 text-white rounded-lg hover:from-orange-500 hover:to-orange-600 transition-all shadow-sm hover:shadow-md"
-                        >
-                            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
-                            </svg>
-                            Add Transaction
-                        </button>
                     </div>
                 </div>
             </div>
@@ -411,9 +400,6 @@ function Transactions() {
                             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" />
                         </svg>
                         <p className="text-gray-500">No transactions found</p>
-                        <button onClick={handleAddNew} className="mt-4 text-orange-500 hover:text-orange-600 font-medium">
-                            Record your first transaction
-                        </button>
                     </div>
                 ) : (
                     <div className="overflow-x-auto">
@@ -472,121 +458,6 @@ function Transactions() {
             {!loading && transactions.length > 0 && (
                 <div className="mt-4 text-sm text-gray-500">
                     Showing {transactions.length} transactions
-                </div>
-            )}
-
-            {/* Add Transaction Modal */}
-            {showModal && (
-                <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
-                    <div className="bg-white rounded-2xl shadow-xl w-full max-w-md">
-                        {/* Modal Header */}
-                        <div className="flex items-center justify-between p-6 border-b border-gray-200">
-                            <h2 className="text-xl font-bold text-gray-900">Add New Transaction</h2>
-                            <button
-                                onClick={() => setShowModal(false)}
-                                className="p-2 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-lg transition-colors"
-                            >
-                                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-                                </svg>
-                            </button>
-                        </div>
-
-                        {/* Modal Body */}
-                        <form onSubmit={handleSubmit} className="p-6 space-y-4">
-                            {formError && (
-                                <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-xl text-sm">
-                                    {formError}
-                                </div>
-                            )}
-
-                            {/* Amount */}
-                            <div>
-                                <label className="block text-sm font-medium text-gray-700 mb-1">
-                                    Amount <span className="text-red-500">*</span>
-                                </label>
-                                <div className="relative">
-                                    <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500">₱</span>
-                                    <input
-                                        type="number"
-                                        name="amount"
-                                        value={formData.amount}
-                                        onChange={handleInputChange}
-                                        step="0.01"
-                                        min="0.01"
-                                        className="w-full pl-8 pr-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-transparent"
-                                        placeholder="0.00"
-                                    />
-                                </div>
-                            </div>
-
-                            {/* Payment Method */}
-                            <div>
-                                <label className="block text-sm font-medium text-gray-700 mb-1">
-                                    Payment Method <span className="text-red-500">*</span>
-                                </label>
-                                <select
-                                    name="paymentMethod"
-                                    value={formData.paymentMethod}
-                                    onChange={handleInputChange}
-                                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-transparent bg-white"
-                                >
-                                    <option value="Cash">Cash</option>
-                                    <option value="Credit Card">Credit Card</option>
-                                    <option value="Debit Card">Debit Card</option>
-                                    <option value="GCash">GCash</option>
-                                    <option value="Maya">Maya</option>
-                                    <option value="Bank Transfer">Bank Transfer</option>
-                                </select>
-                            </div>
-
-                            {/* Order ID */}
-                            <div>
-                                <label className="block text-sm font-medium text-gray-700 mb-1">Order ID (Optional)</label>
-                                <input
-                                    type="number"
-                                    name="orderId"
-                                    value={formData.orderId}
-                                    onChange={handleInputChange}
-                                    min="1"
-                                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-transparent"
-                                    placeholder="Enter order ID"
-                                />
-                            </div>
-
-                            {/* Customer ID */}
-                            <div>
-                                <label className="block text-sm font-medium text-gray-700 mb-1">Customer ID (Optional)</label>
-                                <input
-                                    type="number"
-                                    name="customerId"
-                                    value={formData.customerId}
-                                    onChange={handleInputChange}
-                                    min="1"
-                                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-transparent"
-                                    placeholder="Enter customer ID"
-                                />
-                            </div>
-
-                            {/* Modal Footer */}
-                            <div className="flex items-center justify-end gap-3 pt-4 border-t border-gray-200">
-                                <button
-                                    type="button"
-                                    onClick={() => setShowModal(false)}
-                                    className="px-4 py-2 text-gray-700 hover:bg-gray-100 rounded-lg transition-colors"
-                                >
-                                    Cancel
-                                </button>
-                                <button
-                                    type="submit"
-                                    disabled={formLoading}
-                                    className="px-6 py-2 bg-gradient-to-r from-orange-400 to-orange-500 text-white rounded-lg hover:from-orange-500 hover:to-orange-600 transition-all disabled:opacity-50 disabled:cursor-not-allowed"
-                                >
-                                    {formLoading ? "Saving..." : "Add Transaction"}
-                                </button>
-                            </div>
-                        </form>
-                    </div>
                 </div>
             )}
         </div>
