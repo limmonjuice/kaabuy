@@ -1,9 +1,11 @@
 import { useState, useEffect } from "react";
 import { API_URL } from "../config/constants";
 import { useAuth } from "../context/AuthContext";
+import { useRole } from "../hooks/useRole";
 
 function Customers() {
     const { token } = useAuth();
+    const { isOwner } = useRole();
     const [customers, setCustomers] = useState([]);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState("");
@@ -338,7 +340,7 @@ function Customers() {
                         <div className="flex items-center justify-between">
                             <div>
                                 <p className="text-sm text-gray-500">With Utang</p>
-                                <p className="text-2xl font-bold text-orange-600">{summary.customersWithUtang || 0}</p>
+                                <p className="text-2xl font-bold text-orange-600">{summary.customersWithUtang}</p>
                             </div>
                             <div className="p-3 bg-orange-100 rounded-lg">
                                 <svg className="w-6 h-6 text-orange-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -522,24 +524,28 @@ function Customers() {
                                                         </svg>
                                                     </button>
                                                 )}
-                                                <button
-                                                    onClick={() => handleEdit(customer)}
-                                                    className="p-2 text-gray-500 hover:text-orange-500 hover:bg-orange-50 rounded-lg transition-colors"
-                                                    title="Edit"
-                                                >
-                                                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
-                                                    </svg>
-                                                </button>
-                                                <button
-                                                    onClick={() => handleDelete(customer.customerId)}
-                                                    className="p-2 text-gray-500 hover:text-red-500 hover:bg-red-50 rounded-lg transition-colors"
-                                                    title="Delete"
-                                                >
-                                                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
-                                                    </svg>
-                                                </button>
+                                                {isOwner && (
+                                                    <>
+                                                        <button
+                                                            onClick={() => handleEdit(customer)}
+                                                            className="p-2 text-gray-500 hover:text-orange-500 hover:bg-orange-50 rounded-lg transition-colors"
+                                                            title="Edit"
+                                                        >
+                                                            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+                                                            </svg>
+                                                        </button>
+                                                        <button
+                                                            onClick={() => handleDelete(customer.customerId)}
+                                                            className="p-2 text-gray-500 hover:text-red-500 hover:bg-red-50 rounded-lg transition-colors"
+                                                            title="Delete"
+                                                        >
+                                                            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                                                            </svg>
+                                                        </button>
+                                                    </>
+                                                )}
                                             </div>
                                         </div>
                                     </div>

@@ -1,9 +1,12 @@
 import { useState, useEffect } from "react";
 import { API_URL } from "../config/constants";
 import { useAuth } from "../context/AuthContext";
+import { useRole } from "../hooks/useRole";
+import ViewOnlyBanner from "../components/ViewOnlyBanner";
 
 function Products() {
     const { token } = useAuth();
+    const { isOwner } = useRole();
     const [products, setProducts] = useState([]);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState("");
@@ -176,6 +179,9 @@ function Products() {
                 <p className="text-gray-500 text-sm mt-1">Products displayed at the storefront (showing first 20 products)</p>
             </div>
 
+            {/* View Only Banner */}
+            <ViewOnlyBanner message="Products page is view-only for staff. Contact owner to add or edit products." />
+
             {/* Action Bar */}
             <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-4 mb-6">
                 <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
@@ -206,16 +212,18 @@ function Products() {
                             ))}
                         </select>
 
-                        {/* Add Product Button */}
-                        <button
-                            onClick={handleAddNew}
-                            className="flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-orange-400 to-orange-500 text-white rounded-lg hover:from-orange-500 hover:to-orange-600 transition-all shadow-sm hover:shadow-md"
-                        >
-                            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
-                            </svg>
-                            Add Product
-                        </button>
+                        {/* Add Product Button - Owner Only */}
+                        {isOwner && (
+                            <button
+                                onClick={handleAddNew}
+                                className="flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-orange-400 to-orange-500 text-white rounded-lg hover:from-orange-500 hover:to-orange-600 transition-all shadow-sm hover:shadow-md"
+                            >
+                                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
+                                </svg>
+                                Add Product
+                            </button>
+                        )}
                     </div>
                 </div>
             </div>
@@ -276,24 +284,30 @@ function Products() {
                                         </td>
                                         <td className="px-6 py-4">
                                             <div className="flex items-center justify-center gap-2">
-                                                <button
-                                                    onClick={() => handleEdit(product)}
-                                                    className="p-2 text-gray-500 hover:text-orange-500 hover:bg-orange-50 rounded-lg transition-colors"
-                                                    title="Edit"
-                                                >
-                                                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
-                                                    </svg>
-                                                </button>
-                                                <button
-                                                    onClick={() => handleDelete(product.productId)}
-                                                    className="p-2 text-gray-500 hover:text-red-500 hover:bg-red-50 rounded-lg transition-colors"
-                                                    title="Delete"
-                                                >
-                                                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
-                                                    </svg>
-                                                </button>
+                                                {isOwner ? (
+                                                    <>
+                                                        <button
+                                                            onClick={() => handleEdit(product)}
+                                                            className="p-2 text-gray-500 hover:text-orange-500 hover:bg-orange-50 rounded-lg transition-colors"
+                                                            title="Edit"
+                                                        >
+                                                            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+                                                            </svg>
+                                                        </button>
+                                                        <button
+                                                            onClick={() => handleDelete(product.productId)}
+                                                            className="p-2 text-gray-500 hover:text-red-500 hover:bg-red-50 rounded-lg transition-colors"
+                                                            title="Delete"
+                                                        >
+                                                            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                                                            </svg>
+                                                        </button>
+                                                    </>
+                                                ) : (
+                                                    <span className="text-xs text-gray-400">View Only</span>
+                                                )}
                                             </div>
                                         </td>
                                     </tr>

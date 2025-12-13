@@ -1,11 +1,13 @@
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
+import { useRole } from "../hooks/useRole";
 import { useState } from "react";
 import logo from "../assets/primary_logo.jpg";
 
 function Sidebar({ isOpen, onToggle }) {
     const location = useLocation();
     const { user, logout } = useAuth();
+    const { isOwner } = useRole();
     const navigate = useNavigate();
     const [darkMode, setDarkMode] = useState(false);
 
@@ -58,7 +60,8 @@ function Sidebar({ isOpen, onToggle }) {
                 </svg>
             ),
             text: "Restock",
-            link: "/restock"
+            link: "/restock",
+            ownerOnly: true
         }
     ];
 
@@ -66,11 +69,22 @@ function Sidebar({ isOpen, onToggle }) {
         {
             icon: (
                 <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z" />
+                </svg>
+            ),
+            text: "Staff",
+            link: "/staff",
+            ownerOnly: true
+        },
+        {
+            icon: (
+                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 3v2m6-2v2M9 19v2m6-2v2M5 9H3m2 6H3m18-6h-2m2 6h-2M7 19h10a2 2 0 002-2V7a2 2 0 00-2-2H7a2 2 0 00-2 2v10a2 2 0 002 2zM9 9h6v6H9V9z" />
                 </svg>
             ),
             text: "Suppliers",
-            link: "/suppliers"
+            link: "/suppliers",
+            ownerOnly: true
         },
         {
             icon: (
@@ -101,7 +115,8 @@ function Sidebar({ isOpen, onToggle }) {
                 </svg>
             ),
             text: "Settings",
-            link: "/settings"
+            link: "/settings",
+            ownerOnly: true
         },
         {
             icon: (
@@ -160,7 +175,7 @@ function Sidebar({ isOpen, onToggle }) {
                             Main Menu
                         </h3>
                     )}
-                    {mainMenuItems.map((item, index) => (
+                    {mainMenuItems.filter(item => !item.ownerOnly || isOwner).map((item, index) => (
                         <Link
                             key={index}
                             to={item.link}
@@ -184,7 +199,7 @@ function Sidebar({ isOpen, onToggle }) {
                             Management
                         </h3>
                     )}
-                    {managementItems.map((item, index) => (
+                    {managementItems.filter(item => !item.ownerOnly || isOwner).map((item, index) => (
                         <Link
                             key={index}
                             to={item.link}
@@ -208,7 +223,7 @@ function Sidebar({ isOpen, onToggle }) {
                             Settings
                         </h3>
                     )}
-                    {settingsItems.map((item, index) => (
+                    {settingsItems.filter(item => !item.ownerOnly || isOwner).map((item, index) => (
                         <Link
                             key={index}
                             to={item.link}

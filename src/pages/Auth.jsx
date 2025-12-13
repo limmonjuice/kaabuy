@@ -84,7 +84,12 @@ export default function Auth() {
 
       const data = await response.json();
       login(data);
-      navigate("/");
+
+      if (data.requiresPasswordChange) {
+        navigate("/change-credentials");
+      } else {
+        navigate("/");
+      }
     } catch (err) {
       setError(err.message || 'Login failed. Please try again.');
     } finally {
@@ -183,17 +188,16 @@ export default function Auth() {
           animation: wave 15s ease-in-out infinite;
         }
       `}</style>
-      
+
       {/* Main container */}
       <div className="relative w-full max-w-[900px] h-[580px]">
-        
+
         {/* Login Form - RIGHT side */}
         <div
-          className={`absolute right-0 top-0 w-[calc(50%-10px)] h-full flex items-center justify-center transition-all duration-700 ease-[cubic-bezier(0.68,-0.15,0.32,1.15)] ${
-            isLogin 
-              ? "opacity-100 scale-100 z-10" 
+          className={`absolute right-0 top-0 w-[calc(50%-10px)] h-full flex items-center justify-center transition-all duration-700 ease-[cubic-bezier(0.68,-0.15,0.32,1.15)] ${isLogin
+              ? "opacity-100 scale-100 z-10"
               : "opacity-0 scale-95 pointer-events-none z-0"
-          }`}
+            }`}
         >
           {/* Extended container - rounded only on right, extends off left edge */}
           <div className="bg-gradient-to-br from-orange-50/80 to-white/90 backdrop-blur-sm rounded-r-3xl shadow-2xl p-8 w-[calc(100%+100px)] h-[520px] flex flex-col -ml-[100px]">
@@ -322,11 +326,10 @@ export default function Auth() {
 
         {/* Register Form - LEFT side */}
         <div
-          className={`absolute left-0 top-0 w-[calc(50%-10px)] h-full flex items-center justify-center transition-all duration-700 ease-[cubic-bezier(0.68,-0.15,0.32,1.15)] ${
-            isLogin 
-              ? "opacity-0 scale-95 pointer-events-none z-0" 
+          className={`absolute left-0 top-0 w-[calc(50%-10px)] h-full flex items-center justify-center transition-all duration-700 ease-[cubic-bezier(0.68,-0.15,0.32,1.15)] ${isLogin
+              ? "opacity-0 scale-95 pointer-events-none z-0"
               : "opacity-100 scale-100 z-10"
-          }`}
+            }`}
         >
           {/* Extended container - rounded only on left, extends off right edge */}
           <div className="bg-gradient-to-br from-orange-50/80 to-white/90 backdrop-blur-sm rounded-l-3xl shadow-2xl p-8 w-[calc(100%+100px)] h-[520px] flex flex-col -mr-[100px]">
@@ -335,6 +338,9 @@ export default function Auth() {
                 <h1 className="text-2xl font-bold bg-gradient-to-r from-orange-500 to-yellow-500 bg-clip-text text-transparent text-center">
                   Create a Kaabuy Account
                 </h1>
+                <p className="text-xs text-center text-gray-600 mt-2">
+                  Owner account with full access
+                </p>
 
                 {error && !isLogin && (
                   <div className="bg-red-50 border border-red-200 text-red-700 px-3 py-2 rounded-xl text-xs mt-3">
