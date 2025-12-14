@@ -2,7 +2,6 @@ import { useState, useEffect } from "react";
 import { API_URL } from "../config/constants";
 import { useAuth } from "../context/AuthContext";
 import { useRole } from "../hooks/useRole";
-
 function Customers() {
     const { token } = useAuth();
     const { isOwner } = useRole();
@@ -26,14 +25,16 @@ function Customers() {
         address: ""
     });
     const [paymentAmount, setPaymentAmount] = useState("");
+    const [paymentOrderId, setPaymentOrderId] = useState(""); // New state for Order ID
+    // NEW: Pagination State for History
+    const [historyPage, setHistoryPage] = useState(1);
+    const historyItemsPerPage = 10;
     const [formError, setFormError] = useState("");
     const [formLoading, setFormLoading] = useState(false);
-
     useEffect(() => {
         fetchCustomers();
         fetchSummary();
     }, []);
-
     const fetchCustomers = async () => {
         try {
             setLoading(true);
@@ -51,7 +52,6 @@ function Customers() {
             setLoading(false);
         }
     };
-
     const fetchSummary = async () => {
         try {
             const response = await fetch(`${API_URL}/api/customers/summary`, {
@@ -67,7 +67,6 @@ function Customers() {
             console.error("Failed to fetch summary", err);
         }
     };
-
     const fetchCustomersWithUtang = async () => {
         try {
             setLoading(true);
@@ -86,7 +85,6 @@ function Customers() {
             setLoading(false);
         }
     };
-
     const handleSearch = async () => {
         if (!searchTerm.trim()) {
             showUtangOnly ? fetchCustomersWithUtang() : fetchCustomers();
@@ -109,7 +107,6 @@ function Customers() {
             setLoading(false);
         }
     };
-
     const handleUtangFilter = (checked) => {
         setShowUtangOnly(checked);
         setSearchTerm("");
@@ -119,7 +116,6 @@ function Customers() {
             fetchCustomers();
         }
     };
-
     const fetchTransactionsForCustomer = async (customerId) => {
         try {
             const response = await fetch(`${API_URL}/api/transactions/customer/${customerId}`, {
@@ -133,23 +129,21 @@ function Customers() {
             console.error("Failed to fetch transactions", err);
         }
     };
-
     const handleExpandCustomer = (customerId) => {
         if (expandedCustomer === customerId) {
             setExpandedCustomer(null);
         } else {
             setExpandedCustomer(customerId);
+            setHistoryPage(1); // Reset pagination
             if (!customerTransactions[customerId]) {
                 fetchTransactionsForCustomer(customerId);
             }
         }
     };
-
     const handleInputChange = (e) => {
         const { name, value } = e.target;
         setFormData(prev => ({ ...prev, [name]: value }));
     };
-
     const handleAddNew = () => {
         setEditingCustomer(null);
         setFormData({
@@ -161,7 +155,6 @@ function Customers() {
         setFormError("");
         setShowModal(true);
     };
-
     const handleEdit = (customer) => {
         setEditingCustomer(customer);
         setFormData({
@@ -173,23 +166,19 @@ function Customers() {
         setFormError("");
         setShowModal(true);
     };
-
     const handleSubmit = async (e) => {
         e.preventDefault();
         setFormError("");
         setFormLoading(true);
-
         if (!formData.customerName.trim()) {
             setFormError("Customer name is required");
             setFormLoading(false);
             return;
         }
-
         try {
             const url = editingCustomer
                 ? `${API_URL}/api/customers/${editingCustomer.customerId}`
                 : `${API_URL}/api/customers`;
-
             const response = await fetch(url, {
                 method: editingCustomer ? "PUT" : "POST",
                 headers: {
@@ -198,12 +187,10 @@ function Customers() {
                 },
                 body: JSON.stringify(formData)
             });
-
             if (!response.ok) {
                 const errorData = await response.json();
                 throw new Error(errorData.error || "Failed to save customer");
             }
-
             setShowModal(false);
             fetchCustomers();
             fetchSummary();
@@ -213,10 +200,8 @@ function Customers() {
             setFormLoading(false);
         }
     };
-
     const handleDelete = async (customerId) => {
         if (!confirm("Are you sure you want to delete this customer?")) return;
-
         try {
             const response = await fetch(`${API_URL}/api/customers/${customerId}`, {
                 method: "DELETE",
@@ -224,7 +209,6 @@ function Customers() {
                     "Authorization": `Bearer ${token}`
                 }
             });
-
             if (!response.ok) throw new Error("Failed to delete customer");
             fetchCustomers();
             fetchSummary();
@@ -232,50 +216,53 @@ function Customers() {
             alert(err.message);
         }
     };
-
     const openPaymentModal = (customer) => {
         setSelectedCustomer(customer);
         setPaymentAmount("");
+        setPaymentOrderId(""); // Reset Order ID
         setFormError("");
         setShowPaymentModal(true);
     };
-
     const handlePayment = async (e) => {
         e.preventDefault();
         setFormError("");
         setFormLoading(true);
-
         if (!paymentAmount || parseFloat(paymentAmount) <= 0) {
             setFormError("Please enter a valid payment amount");
             setFormLoading(false);
             return;
         }
-
         try {
+            const paymentData = {
+                amount: parseFloat(paymentAmount)
+            };
+            // Only add orderId if it has a value
+            if (paymentOrderId) {
+                paymentData.orderId = parseInt(paymentOrderId);
+            }
             const response = await fetch(`${API_URL}/api/customers/${selectedCustomer.customerId}/pay`, {
                 method: "POST",
                 headers: {
                     "Content-Type": "application/json",
                     "Authorization": `Bearer ${token}`
                 },
-                body: JSON.stringify({ amount: parseFloat(paymentAmount) })
+                body: JSON.stringify(paymentData)
             });
-
             if (!response.ok) {
                 const errorData = await response.json();
                 throw new Error(errorData.error || "Failed to record payment");
             }
-
             setShowPaymentModal(false);
             fetchCustomers();
             fetchSummary();
+            // Refresh transactions for this customer to show the new payment immediately
+            fetchTransactionsForCustomer(selectedCustomer.customerId);
         } catch (err) {
             setFormError(err.message);
         } finally {
             setFormLoading(false);
         }
     };
-
     const formatDate = (dateString) => {
         if (!dateString) return "-";
         const date = new Date(dateString);
@@ -285,7 +272,6 @@ function Customers() {
             day: 'numeric'
         });
     };
-
     const getUtangBadge = (totalUtang) => {
         const amount = parseFloat(totalUtang) || 0;
         if (amount === 0) {
@@ -295,7 +281,6 @@ function Customers() {
         }
         return <span className="px-2 py-1 text-xs font-medium rounded-full bg-yellow-100 text-yellow-700">Has Utang</span>;
     };
-
     const getPaymentMethodBadge = (method) => {
         const styles = {
             'CASH': 'bg-green-100 text-green-700',
@@ -306,12 +291,10 @@ function Customers() {
         };
         return styles[method] || 'bg-gray-100 text-gray-700';
     };
-
     const formatCurrency = (amount) => {
         if (!amount) return "₱0.00";
         return `₱${parseFloat(amount).toLocaleString('en-US', { minimumFractionDigits: 2 })}`;
     };
-
     return (
         <div className="p-6">
             {/* Page Header */}
@@ -319,7 +302,6 @@ function Customers() {
                 <h1 className="text-2xl font-bold text-gray-900">Customers</h1>
                 <p className="text-gray-500 text-sm mt-1">Manage your customers and track utang</p>
             </div>
-
             {/* Summary Cards */}
             {summary && (
                 <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
@@ -377,7 +359,6 @@ function Customers() {
                     </div>
                 </div>
             )}
-
             {/* Action Bar */}
             <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-4 mb-6">
                 <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
@@ -403,7 +384,6 @@ function Customers() {
                             Search
                         </button>
                     </div>
-
                     <div className="flex items-center gap-4">
                         {/* Utang Filter */}
                         <label className="flex items-center gap-2 cursor-pointer">
@@ -415,7 +395,6 @@ function Customers() {
                             />
                             <span className="text-sm text-gray-700">With Utang Only</span>
                         </label>
-
                         {/* Add Customer Button */}
                         <button
                             onClick={handleAddNew}
@@ -429,14 +408,12 @@ function Customers() {
                     </div>
                 </div>
             </div>
-
             {/* Error Message */}
             {error && (
                 <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-xl mb-6">
                     {error}
                 </div>
             )}
-
             {/* Customers Table */}
             <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
                 {loading ? (
@@ -463,7 +440,6 @@ function Customers() {
                             const filteredTransactions = currentFilter
                                 ? transactions.filter(t => t.paymentMethod && t.paymentMethod.toUpperCase() === currentFilter.toUpperCase())
                                 : transactions;
-
                             return (
                                 <div key={customer.customerId} className="hover:bg-gray-50 transition-colors">
                                     {/* Customer Row */}
@@ -479,7 +455,6 @@ function Customers() {
                                                 >
                                                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
                                                 </svg>
-
                                                 {/* Customer Info */}
                                                 <div className="w-10 h-10 bg-gradient-to-br from-orange-400 to-orange-600 rounded-full flex items-center justify-center text-white font-semibold">
                                                     {customer.customerName?.charAt(0).toUpperCase()}
@@ -490,13 +465,11 @@ function Customers() {
                                                         {customer.contactNumber || "No contact"} • {customer.email || "No email"}
                                                     </div>
                                                 </div>
-
                                                 {/* Transaction Count */}
                                                 <div className="text-center px-4">
                                                     <p className="text-sm text-gray-500">Transactions</p>
                                                     <p className="font-medium text-gray-900">{customer.transactionCount || 0}</p>
                                                 </div>
-
                                                 {/* Utang */}
                                                 <div className="text-right px-4">
                                                     <p className="text-sm text-gray-500">Utang</p>
@@ -504,13 +477,11 @@ function Customers() {
                                                         {formatCurrency(customer.totalUtang)}
                                                     </p>
                                                 </div>
-
                                                 {/* Status Badge */}
                                                 <div>
                                                     {getUtangBadge(customer.totalUtang)}
                                                 </div>
                                             </div>
-
                                             {/* Actions */}
                                             <div className="flex items-center gap-1 ml-4" onClick={(e) => e.stopPropagation()}>
                                                 {parseFloat(customer.totalUtang) > 0 && (
@@ -549,7 +520,6 @@ function Customers() {
                                             </div>
                                         </div>
                                     </div>
-
                                     {/* Expanded Transactions */}
                                     {isExpanded && (
                                         <div className="px-4 pb-4 bg-gray-50">
@@ -594,6 +564,7 @@ function Customers() {
                                                             <tr>
                                                                 <th className="text-left px-4 py-2">Date</th>
                                                                 <th className="text-left px-4 py-2">Transaction ID</th>
+                                                                <th className="text-left px-4 py-2">Order ID</th>
                                                                 <th className="text-center px-4 py-2">Payment Method</th>
                                                                 <th className="text-center px-4 py-2">Items</th>
                                                                 <th className="text-right px-4 py-2">Total Amount</th>
@@ -601,36 +572,75 @@ function Customers() {
                                                             </tr>
                                                         </thead>
                                                         <tbody className="divide-y divide-gray-100 text-sm">
-                                                            {filteredTransactions.slice(0, 10).map((transaction) => (
-                                                                <tr key={transaction.transactionId}>
-                                                                    <td className="px-4 py-2 text-gray-600">
-                                                                        {formatDate(transaction.transactionDate)}
-                                                                    </td>
-                                                                    <td className="px-4 py-2 text-gray-600">
-                                                                        #{transaction.transactionId}
-                                                                    </td>
-                                                                    <td className="px-4 py-2 text-center">
-                                                                        <span className={`px-2 py-0.5 text-xs font-medium rounded-full ${getPaymentMethodBadge(transaction.paymentMethod)}`}>
-                                                                            {transaction.paymentMethod}
-                                                                        </span>
-                                                                    </td>
-                                                                    <td className="px-4 py-2 text-center text-gray-600">
-                                                                        {transaction.itemCount || 0}
-                                                                    </td>
-                                                                    <td className="px-4 py-2 text-right font-medium text-gray-900">
-                                                                        {formatCurrency(transaction.totalAmount)}
-                                                                    </td>
-                                                                    <td className="px-4 py-2 text-right text-gray-600">
-                                                                        {formatCurrency(transaction.amountPaid)}
-                                                                    </td>
-                                                                </tr>
-                                                            ))}
+                                                            {filteredTransactions
+                                                                .slice((historyPage - 1) * historyItemsPerPage, historyPage * historyItemsPerPage)
+                                                                .map((transaction) => (
+                                                                    <tr key={transaction.transactionId}>
+                                                                        <td className="px-4 py-2 text-gray-600">
+                                                                            {formatDate(transaction.transactionDate)}
+                                                                        </td>
+                                                                        <td className="px-4 py-2 text-gray-600">
+                                                                            #{transaction.transactionId}
+                                                                        </td>
+                                                                        <td className="px-4 py-2 text-gray-600">
+                                                                            {transaction.orderId ? `#${transaction.orderId}` : '-'}
+                                                                        </td>
+                                                                        <td className="px-4 py-2 text-center">
+                                                                            <span className={`px-2 py-0.5 text-xs font-medium rounded-full ${getPaymentMethodBadge(transaction.paymentMethod)}`}>
+                                                                                {transaction.paymentMethod}
+                                                                            </span>
+                                                                        </td>
+                                                                        <td className="px-4 py-2 text-center text-gray-600">
+                                                                            {transaction.itemCount || 0}
+                                                                        </td>
+                                                                        <td className="px-4 py-2 text-right font-medium text-gray-900">
+                                                                            {formatCurrency(transaction.totalAmount)}
+                                                                        </td>
+                                                                        <td className="px-4 py-2 text-right text-gray-600">
+                                                                            {formatCurrency(transaction.amountPaid)}
+                                                                        </td>
+                                                                    </tr>
+                                                                ))}
                                                         </tbody>
                                                     </table>
                                                 )}
-                                                {filteredTransactions.length > 10 && (
-                                                    <div className="px-4 py-2 bg-gray-50 text-center text-sm text-gray-500 border-t border-gray-200">
-                                                        Showing 10 of {filteredTransactions.length} transactions
+                                                {filteredTransactions.length > historyItemsPerPage && (
+                                                    <div className="px-4 py-3 bg-gray-50 border-t border-gray-200 flex items-center justify-between">
+                                                        <button
+                                                            onClick={(e) => {
+                                                                e.stopPropagation();
+                                                                setHistoryPage(prev => Math.max(prev - 1, 1));
+                                                            }}
+                                                            disabled={historyPage === 1}
+                                                            className={`flex items-center gap-1 px-3 py-1 rounded-md text-xs font-medium transition-colors ${historyPage === 1
+                                                                ? 'text-gray-300 cursor-not-allowed'
+                                                                : 'text-gray-700 hover:bg-gray-100'
+                                                                }`}
+                                                        >
+                                                            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
+                                                            </svg>
+                                                            Previous
+                                                        </button>
+                                                        <span className="text-xs text-gray-600">
+                                                            Page <span className="font-semibold text-gray-900">{historyPage}</span> of <span className="font-semibold text-gray-900">{Math.ceil(filteredTransactions.length / historyItemsPerPage)}</span>
+                                                        </span>
+                                                        <button
+                                                            onClick={(e) => {
+                                                                e.stopPropagation();
+                                                                setHistoryPage(prev => Math.min(prev + 1, Math.ceil(filteredTransactions.length / historyItemsPerPage)));
+                                                            }}
+                                                            disabled={historyPage === Math.ceil(filteredTransactions.length / historyItemsPerPage)}
+                                                            className={`flex items-center gap-1 px-3 py-1 rounded-md text-xs font-medium transition-colors ${historyPage === Math.ceil(filteredTransactions.length / historyItemsPerPage)
+                                                                ? 'text-gray-300 cursor-not-allowed'
+                                                                : 'text-gray-700 hover:bg-gray-100'
+                                                                }`}
+                                                        >
+                                                            Next
+                                                            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+                                                            </svg>
+                                                        </button>
                                                     </div>
                                                 )}
                                             </div>
@@ -642,14 +652,12 @@ function Customers() {
                     </div>
                 )}
             </div>
-
             {/* Customer Count */}
             {!loading && customers.length > 0 && (
                 <div className="mt-4 text-sm text-gray-500">
                     Showing {customers.length} customers
                 </div>
             )}
-
             {/* Add/Edit Customer Modal */}
             {showModal && (
                 <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
@@ -668,7 +676,6 @@ function Customers() {
                                 </svg>
                             </button>
                         </div>
-
                         {/* Modal Body */}
                         <form onSubmit={handleSubmit} className="p-6 space-y-4">
                             {formError && (
@@ -676,7 +683,6 @@ function Customers() {
                                     {formError}
                                 </div>
                             )}
-
                             {/* Customer Name */}
                             <div>
                                 <label className="block text-sm font-medium text-gray-700 mb-1">
@@ -691,7 +697,6 @@ function Customers() {
                                     placeholder="Enter customer name"
                                 />
                             </div>
-
                             {/* Contact Number */}
                             <div>
                                 <label className="block text-sm font-medium text-gray-700 mb-1">Contact Number</label>
@@ -704,7 +709,6 @@ function Customers() {
                                     placeholder="e.g., 09123456789"
                                 />
                             </div>
-
                             {/* Email */}
                             <div>
                                 <label className="block text-sm font-medium text-gray-700 mb-1">Email</label>
@@ -717,7 +721,6 @@ function Customers() {
                                     placeholder="customer@email.com"
                                 />
                             </div>
-
                             {/* Address */}
                             <div>
                                 <label className="block text-sm font-medium text-gray-700 mb-1">Address</label>
@@ -730,7 +733,6 @@ function Customers() {
                                     placeholder="Enter address"
                                 />
                             </div>
-
                             {/* Modal Footer */}
                             <div className="flex items-center justify-end gap-3 pt-4 border-t border-gray-200">
                                 <button
@@ -752,7 +754,6 @@ function Customers() {
                     </div>
                 </div>
             )}
-
             {/* Payment Modal */}
             {showPaymentModal && selectedCustomer && (
                 <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
@@ -769,7 +770,6 @@ function Customers() {
                                 </svg>
                             </button>
                         </div>
-
                         {/* Modal Body */}
                         <form onSubmit={handlePayment} className="p-6 space-y-4">
                             {formError && (
@@ -777,7 +777,6 @@ function Customers() {
                                     {formError}
                                 </div>
                             )}
-
                             {/* Customer Info */}
                             <div className="bg-gray-50 rounded-xl p-4">
                                 <div className="flex items-center mb-3">
@@ -796,7 +795,22 @@ function Customers() {
                                     </span>
                                 </div>
                             </div>
-
+                            {/* Order ID Input - NEW */}
+                            <div>
+                                <label className="block text-sm font-medium text-gray-700 mb-1">
+                                    Order ID <span className="text-gray-400 font-normal">(Optional)</span>
+                                </label>
+                                <input
+                                    type="number"
+                                    value={paymentOrderId}
+                                    onChange={(e) => setPaymentOrderId(e.target.value)}
+                                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-transparent"
+                                    placeholder="Enter Order ID to link"
+                                />
+                                <p className="text-xs text-gray-500 mt-1">
+                                    Link this payment to a specific transaction.
+                                </p>
+                            </div>
                             {/* Payment Amount */}
                             <div>
                                 <label className="block text-sm font-medium text-gray-700 mb-1">
@@ -823,7 +837,6 @@ function Customers() {
                                     Pay full amount
                                 </button>
                             </div>
-
                             {/* Modal Footer */}
                             <div className="flex items-center justify-end gap-3 pt-4 border-t border-gray-200">
                                 <button
@@ -848,5 +861,4 @@ function Customers() {
         </div>
     );
 }
-
 export default Customers;

@@ -11,11 +11,11 @@ import Suppliers from "./pages/Suppliers";
 import POS from "./pages/POS";
 import Restock from "./pages/Restock";
 import Staff from "./pages/Staff";
+import HelpSupport from "./pages/HelpSupport";
+import Settings from "./pages/Settings";
 import Auth from "./pages/Auth";
 import ChangeCredentials from "./pages/ChangeCredentials";
 import ProtectedRoute from "./components/ProtectedRoute";
-
-
 import RoleRoute from "./components/RoleRoute";
 
 const App = () => {
@@ -40,7 +40,7 @@ const App = () => {
             <Sidebar isOpen={sidebarToggle} onToggle={toggleSidebar} />
             <div className="flex-1 flex flex-col ">
               <Header />
-              <main className="flex-1 bg-slate-200">
+              <main className="flex-1 bg-slate-200 overflow-y-auto overflow-x-hidden">
                 <Routes>
                   <Route path="/" element={<Dashboard />} />
                   <Route path="/pos" element={<POS />} />
@@ -63,6 +63,8 @@ const App = () => {
                       <Staff />
                     </RoleRoute>
                   } />
+                  <Route path="/help" element={<HelpSupport />} />
+                  <Route path="/settings" element={<Settings />} />
                 </Routes>
               </main>
             </div>
@@ -73,4 +75,4 @@ const App = () => {
   )
 }
 
-export default App 
+export default App

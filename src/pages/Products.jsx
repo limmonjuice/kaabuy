@@ -3,7 +3,6 @@ import { API_URL } from "../config/constants";
 import { useAuth } from "../context/AuthContext";
 import { useRole } from "../hooks/useRole";
 import ViewOnlyBanner from "../components/ViewOnlyBanner";
-
 function Products() {
     const { token } = useAuth();
     const { isOwner } = useRole();
@@ -20,17 +19,17 @@ function Products() {
         category: "",
         basePrice: "",
         listPrice: "",
-        unit: "pcs"
+        unit: "pcs",
+        imageUrl: ""
     });
     const [formError, setFormError] = useState("");
     const [formLoading, setFormLoading] = useState(false);
-
+    const [uploadingImage, setUploadingImage] = useState(false);
     // Fetch products on mount
     useEffect(() => {
         fetchProducts();
         fetchCategories();
     }, []);
-
     const fetchProducts = async () => {
         try {
             setLoading(true);
@@ -48,7 +47,6 @@ function Products() {
             setLoading(false);
         }
     };
-
     const fetchCategories = async () => {
         try {
             const response = await fetch(`${API_URL}/api/products/categories`, {
@@ -64,20 +62,43 @@ function Products() {
             console.error("Failed to fetch categories", err);
         }
     };
-
     // Filter products based on search and category, limit to 20 for storefront display
     const filteredProducts = products.filter(product => {
         const matchesSearch = product.productName.toLowerCase().includes(searchTerm.toLowerCase());
         const matchesCategory = !selectedCategory || product.category === selectedCategory;
         return matchesSearch && matchesCategory;
     }).slice(0, 20);
-
     // Handle form input changes
     const handleInputChange = (e) => {
         const { name, value } = e.target;
         setFormData(prev => ({ ...prev, [name]: value }));
     };
-
+    // Handle Image Upload
+    const handleImageUpload = async (e) => {
+        const file = e.target.files[0];
+        if (!file) return;
+        setUploadingImage(true);
+        const uploadData = new FormData();
+        uploadData.append("file", file);
+        try {
+            const response = await fetch(`${API_URL}/api/uploads`, {
+                method: "POST",
+                headers: {
+                    "Authorization": `Bearer ${token}`
+                },
+                body: uploadData
+            });
+            if (!response.ok) throw new Error("Failed to upload image");
+            const data = await response.json();
+            // Assuming the backend returns { imageUrl: "/uploads/filename.jpg" }
+            setFormData(prev => ({ ...prev, imageUrl: data.imageUrl }));
+        } catch (err) {
+            console.error("Image upload error:", err);
+            setFormError("Failed to upload image");
+        } finally {
+            setUploadingImage(false);
+        }
+    };
     // Open modal for adding new product
     const handleAddNew = () => {
         setEditingProduct(null);
@@ -86,12 +107,12 @@ function Products() {
             category: "",
             basePrice: "",
             listPrice: "",
-            unit: "pcs"
+            unit: "pcs",
+            imageUrl: ""
         });
         setFormError("");
         setShowModal(true);
     };
-
     // Open modal for editing product
     const handleEdit = (product) => {
         setEditingProduct(product);
@@ -100,30 +121,27 @@ function Products() {
             category: product.category || "",
             basePrice: product.basePrice,
             listPrice: product.listPrice,
-            unit: product.unit || "pcs"
+            unit: product.unit || "pcs",
+            imageUrl: product.imageUrl || ""
         });
         setFormError("");
         setShowModal(true);
     };
-
     // Submit form (create or update)
     const handleSubmit = async (e) => {
         e.preventDefault();
         setFormError("");
         setFormLoading(true);
-
         // Validation
         if (!formData.productName || !formData.listPrice) {
             setFormError("Product name and list price are required");
             setFormLoading(false);
             return;
         }
-
         try {
             const url = editingProduct
                 ? `${API_URL}/api/products/${editingProduct.productId}`
                 : `${API_URL}/api/products`;
-
             const response = await fetch(url, {
                 method: editingProduct ? "PUT" : "POST",
                 headers: {
@@ -136,12 +154,10 @@ function Products() {
                     listPrice: parseFloat(formData.listPrice)
                 })
             });
-
             if (!response.ok) {
                 const errorData = await response.json();
                 throw new Error(errorData.error || "Failed to save product");
             }
-
             setShowModal(false);
             fetchProducts();
             fetchCategories();
@@ -151,11 +167,9 @@ function Products() {
             setFormLoading(false);
         }
     };
-
     // Delete product
     const handleDelete = async (productId) => {
         if (!confirm("Are you sure you want to delete this product?")) return;
-
         try {
             const response = await fetch(`${API_URL}/api/products/${productId}`, {
                 method: "DELETE",
@@ -163,14 +177,18 @@ function Products() {
                     "Authorization": `Bearer ${token}`
                 }
             });
-
             if (!response.ok) throw new Error("Failed to delete product");
             fetchProducts();
         } catch (err) {
             alert(err.message);
         }
     };
-
+    // Helper to get full image URL
+    const getImageUrl = (path) => {
+        if (!path || path.trim() === "") return "https://placehold.co/300x200?text=No+Image";
+        if (path.startsWith("http")) return path;
+        return `${API_URL}${path}`;
+    };
     return (
         <div className="p-6">
             {/* Page Header */}
@@ -178,10 +196,8 @@ function Products() {
                 <h1 className="text-2xl font-bold text-gray-900">Store Products</h1>
                 <p className="text-gray-500 text-sm mt-1">Products displayed at the storefront (showing first 20 products)</p>
             </div>
-
             {/* View Only Banner */}
             <ViewOnlyBanner message="Products page is view-only for staff. Contact owner to add or edit products." />
-
             {/* Action Bar */}
             <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-4 mb-6">
                 <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
@@ -198,7 +214,6 @@ function Products() {
                             className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-transparent"
                         />
                     </div>
-
                     <div className="flex items-center gap-3">
                         {/* Category Filter */}
                         <select
@@ -211,7 +226,6 @@ function Products() {
                                 <option key={index} value={cat}>{cat}</option>
                             ))}
                         </select>
-
                         {/* Add Product Button - Owner Only */}
                         {isOwner && (
                             <button
@@ -227,104 +241,102 @@ function Products() {
                     </div>
                 </div>
             </div>
-
             {/* Error Message */}
             {error && (
                 <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-xl mb-6">
                     {error}
                 </div>
             )}
-
-            {/* Products Table */}
-            <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
-                {loading ? (
-                    <div className="flex items-center justify-center py-12">
-                        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-orange-500"></div>
-                        <span className="ml-3 text-gray-500">Loading products...</span>
-                    </div>
-                ) : filteredProducts.length === 0 ? (
-                    <div className="text-center py-12">
-                        <svg className="w-16 h-16 mx-auto text-gray-300 mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4" />
-                        </svg>
-                        <p className="text-gray-500">No products found</p>
+            {/* Products Grid (Cards Layout) */}
+            {loading ? (
+                <div className="flex items-center justify-center py-12">
+                    <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-orange-500"></div>
+                    <span className="ml-3 text-gray-500">Loading products...</span>
+                </div>
+            ) : filteredProducts.length === 0 ? (
+                <div className="text-center py-12 bg-white rounded-xl shadow-sm border border-gray-200">
+                    <svg className="w-16 h-16 mx-auto text-gray-300 mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4" />
+                    </svg>
+                    <p className="text-gray-500">No products found</p>
+                    {isOwner && (
                         <button onClick={handleAddNew} className="mt-4 text-orange-500 hover:text-orange-600 font-medium">
                             Add your first product
                         </button>
-                    </div>
-                ) : (
-                    <div className="overflow-x-auto">
-                        <table className="w-full">
-                            <thead className="bg-gray-50 border-b border-gray-200">
-                                <tr>
-                                    <th className="text-left px-6 py-4 text-xs font-semibold text-gray-500 uppercase tracking-wider">Product</th>
-                                    <th className="text-left px-6 py-4 text-xs font-semibold text-gray-500 uppercase tracking-wider">Category</th>
-                                    <th className="text-right px-6 py-4 text-xs font-semibold text-gray-500 uppercase tracking-wider">Base Price</th>
-                                    <th className="text-right px-6 py-4 text-xs font-semibold text-gray-500 uppercase tracking-wider">List Price</th>
-                                    <th className="text-center px-6 py-4 text-xs font-semibold text-gray-500 uppercase tracking-wider">Actions</th>
-                                </tr>
-                            </thead>
-                            <tbody className="divide-y divide-gray-100">
-                                {filteredProducts.map((product) => (
-                                    <tr key={product.productId} className="hover:bg-gray-50 transition-colors">
-                                        <td className="px-6 py-4">
-                                            <div className="font-medium text-gray-900">{product.productName}</div>
-                                            <div className="text-xs text-gray-500">{product.unit}</div>
-                                        </td>
-                                        <td className="px-6 py-4">
-                                            <span className="px-2 py-1 text-xs font-medium rounded-full bg-gray-100 text-gray-700">
-                                                {product.category || "Uncategorized"}
-                                            </span>
-                                        </td>
-                                        <td className="px-6 py-4 text-right text-gray-600">
-                                            ₱{product.basePrice?.toFixed(2) || "0.00"}
-                                        </td>
-                                        <td className="px-6 py-4 text-right font-medium text-gray-900">
-                                            ₱{product.listPrice?.toFixed(2)}
-                                        </td>
-                                        <td className="px-6 py-4">
-                                            <div className="flex items-center justify-center gap-2">
-                                                {isOwner ? (
-                                                    <>
-                                                        <button
-                                                            onClick={() => handleEdit(product)}
-                                                            className="p-2 text-gray-500 hover:text-orange-500 hover:bg-orange-50 rounded-lg transition-colors"
-                                                            title="Edit"
-                                                        >
-                                                            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
-                                                            </svg>
-                                                        </button>
-                                                        <button
-                                                            onClick={() => handleDelete(product.productId)}
-                                                            className="p-2 text-gray-500 hover:text-red-500 hover:bg-red-50 rounded-lg transition-colors"
-                                                            title="Delete"
-                                                        >
-                                                            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
-                                                            </svg>
-                                                        </button>
-                                                    </>
-                                                ) : (
-                                                    <span className="text-xs text-gray-400">View Only</span>
-                                                )}
-                                            </div>
-                                        </td>
-                                    </tr>
-                                ))}
-                            </tbody>
-                        </table>
-                    </div>
-                )}
-            </div>
-
-            {/* Product Count */}
-            {!loading && filteredProducts.length > 0 && (
-                <div className="mt-4 text-sm text-gray-500">
-                    Showing {filteredProducts.length} of {products.length} products (limited to 20 for storefront)
+                    )}
+                </div>
+            ) : (
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+                    {filteredProducts.map((product) => (
+                        <div key={product.productId} className="bg-white rounded-xl shadow-sm hover:shadow-md transition-shadow duration-200 overflow-hidden border border-gray-200 flex flex-col h-full">
+                            {/* Card Image */}
+                            <div className="relative h-48 w-full bg-gray-100 overflow-hidden group">
+                                <img
+                                    src={getImageUrl(product.imageUrl)}
+                                    alt={product.productName}
+                                    className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+                                />
+                                {product.stockStatus === "OUT_OF_STOCK" && (
+                                    <div className="absolute inset-0 bg-black/50 flex items-center justify-center">
+                                        <span className="text-white font-bold bg-red-600 px-3 py-1 rounded-full text-sm">Out of Stock</span>
+                                    </div>
+                                )}
+                                {product.stockStatus === "LOW_STOCK" && (
+                                    <div className="absolute top-2 right-2">
+                                        <span className="text-white font-bold bg-yellow-500 px-3 py-1 rounded-full text-xs shadow-sm">Low Stock</span>
+                                    </div>
+                                )}
+                            </div>
+                            {/* Card Body */}
+                            <div className="p-4 flex flex-col flex-grow">
+                                <div className="flex justify-between items-start mb-2">
+                                    <span className="text-xs font-semibold text-orange-600 bg-orange-50 px-2 py-1 rounded-full uppercase tracking-wide">
+                                        {product.category || "General"}
+                                    </span>
+                                    <span className="text-sm text-gray-400">{product.unit}</span>
+                                </div>
+                                <h3 className="text-lg font-bold text-gray-900 mb-1 line-clamp-1" title={product.productName}>
+                                    {product.productName}
+                                </h3>
+                                <div className="mt-auto pt-4 flex items-end justify-between border-t border-gray-100">
+                                    <div>
+                                        <p className="text-xs text-gray-500">List Price</p>
+                                        <p className="text-xl font-bold text-gray-900">₱{product.listPrice?.toFixed(2)}</p>
+                                    </div>
+                                    {isOwner && (
+                                        <div className="flex gap-2">
+                                            <button
+                                                onClick={() => handleEdit(product)}
+                                                className="p-2 text-gray-500 hover:text-orange-500 hover:bg-orange-50 rounded-lg transition-colors"
+                                                title="Edit"
+                                            >
+                                                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+                                                </svg>
+                                            </button>
+                                            <button
+                                                onClick={() => handleDelete(product.productId)}
+                                                className="p-2 text-gray-500 hover:text-red-500 hover:bg-red-50 rounded-lg transition-colors"
+                                                title="Delete"
+                                            >
+                                                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                                                </svg>
+                                            </button>
+                                        </div>
+                                    )}
+                                </div>
+                            </div>
+                        </div>
+                    ))}
                 </div>
             )}
-
+            {/* Product Count */}
+            {!loading && filteredProducts.length > 0 && (
+                <div className="mt-8 text-center">
+                    <p className="text-sm text-gray-500">Showing {filteredProducts.length} of {products.length} products</p>
+                </div>
+            )}
             {/* Add/Edit Modal */}
             {showModal && (
                 <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
@@ -343,7 +355,6 @@ function Products() {
                                 </svg>
                             </button>
                         </div>
-
                         {/* Modal Body */}
                         <form onSubmit={handleSubmit} className="p-6 space-y-4">
                             {formError && (
@@ -351,7 +362,34 @@ function Products() {
                                     {formError}
                                 </div>
                             )}
-
+                            {/* Image Upload */}
+                            <div className="mb-4">
+                                <label className="block text-sm font-medium text-gray-700 mb-2">Product Image</label>
+                                <div className="flex items-center gap-4">
+                                    <div className="w-20 h-20 rounded-lg bg-gray-100 border border-gray-200 overflow-hidden flex-shrink-0">
+                                        <img
+                                            src={getImageUrl(formData.imageUrl)}
+                                            alt="Preview"
+                                            className="w-full h-full object-cover"
+                                        />
+                                    </div>
+                                    <div className="flex-1">
+                                        <input
+                                            type="file"
+                                            accept="image/*"
+                                            onChange={handleImageUpload}
+                                            className="block w-full text-sm text-gray-500
+                                                file:mr-4 file:py-2 file:px-4
+                                                file:rounded-full file:border-0
+                                                file:text-sm file:font-semibold
+                                                file:bg-orange-50 file:text-orange-700
+                                                hover:file:bg-orange-100
+                                            "
+                                        />
+                                        {uploadingImage && <p className="text-xs text-orange-500 mt-1">Uploading...</p>}
+                                    </div>
+                                </div>
+                            </div>
                             {/* Product Name */}
                             <div>
                                 <label className="block text-sm font-medium text-gray-700 mb-1">
@@ -366,7 +404,6 @@ function Products() {
                                     placeholder="Enter product name"
                                 />
                             </div>
-
                             {/* Category */}
                             <div>
                                 <label className="block text-sm font-medium text-gray-700 mb-1">Category</label>
@@ -385,7 +422,6 @@ function Products() {
                                     ))}
                                 </datalist>
                             </div>
-
                             {/* Prices Row */}
                             <div className="grid grid-cols-2 gap-4">
                                 <div>
@@ -423,7 +459,6 @@ function Products() {
                                     </div>
                                 </div>
                             </div>
-
                             {/* Unit */}
                             <div>
                                 <label className="block text-sm font-medium text-gray-700 mb-1">Unit</label>
@@ -444,7 +479,6 @@ function Products() {
                                     <option value="can">can</option>
                                 </select>
                             </div>
-
                             {/* Modal Footer */}
                             <div className="flex items-center justify-end gap-3 pt-4 border-t border-gray-200">
                                 <button
@@ -456,7 +490,7 @@ function Products() {
                                 </button>
                                 <button
                                     type="submit"
-                                    disabled={formLoading}
+                                    disabled={formLoading || uploadingImage}
                                     className="px-6 py-2 bg-gradient-to-r from-orange-400 to-orange-500 text-white rounded-lg hover:from-orange-500 hover:to-orange-600 transition-all disabled:opacity-50 disabled:cursor-not-allowed"
                                 >
                                     {formLoading ? "Saving..." : (editingProduct ? "Update" : "Add Product")}
@@ -469,5 +503,4 @@ function Products() {
         </div>
     );
 }
-
 export default Products;
