@@ -19,6 +19,7 @@ function Suppliers() {
         address: ""
     });
     const [formError, setFormError] = useState("");
+    const [fieldErrors, setFieldErrors] = useState({});
     const [formLoading, setFormLoading] = useState(false);
 
     useEffect(() => {
@@ -119,6 +120,7 @@ function Suppliers() {
             address: ""
         });
         setFormError("");
+        setFieldErrors({});
         setShowModal(true);
     };
 
@@ -131,6 +133,7 @@ function Suppliers() {
             address: supplier.address || ""
         });
         setFormError("");
+        setFieldErrors({});
         setShowModal(true);
     };
 
@@ -139,8 +142,16 @@ function Suppliers() {
         setFormError("");
         setFormLoading(true);
 
-        if (!formData.supplierName.trim()) {
-            setFormError("Supplier name is required");
+        // Clear previous errors
+        setFieldErrors({});
+
+        // Validate required fields
+        const errors = {};
+        if (!formData.supplierName.trim()) errors.supplierName = "Supplier name is required";
+        if (!formData.contactNumber.trim()) errors.contactNumber = "Contact number is required";
+
+        if (Object.keys(errors).length > 0) {
+            setFieldErrors(errors);
             setFormLoading(false);
             return;
         }
@@ -220,47 +231,47 @@ function Suppliers() {
         <div className="p-6">
             {/* Page Header */}
             <div className="mb-6">
-                <h1 className="text-2xl font-bold text-gray-900">Suppliers</h1>
-                <p className="text-gray-500 text-sm mt-1">Manage supplier information and track orders</p>
+                <h1 className="text-2xl font-bold text-gray-900 dark:text-white">Suppliers</h1>
+                <p className="text-gray-500 dark:text-gray-400 text-sm mt-1">Manage supplier information and track orders</p>
             </div>
 
             {/* Summary Cards */}
             {summary && (
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
-                    <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-4">
+                    <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 p-4">
                         <div className="flex items-center justify-between">
                             <div>
-                                <p className="text-sm text-gray-500">Total Suppliers</p>
-                                <p className="text-2xl font-bold text-gray-900">{summary.totalSuppliers || 0}</p>
+                                <p className="text-sm text-gray-500 dark:text-gray-400">Total Suppliers</p>
+                                <p className="text-2xl font-bold text-gray-900 dark:text-white">{summary.totalSuppliers || 0}</p>
                             </div>
-                            <div className="p-3 bg-blue-100 rounded-lg">
-                                <svg className="w-6 h-6 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <div className="p-3 bg-blue-100 dark:bg-blue-900/30 rounded-lg">
+                                <svg className="w-6 h-6 text-blue-600 dark:text-blue-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" />
                                 </svg>
                             </div>
                         </div>
                     </div>
-                    <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-4">
+                    <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 p-4">
                         <div className="flex items-center justify-between">
                             <div>
-                                <p className="text-sm text-gray-500">Preferred Suppliers</p>
-                                <p className="text-2xl font-bold text-green-600">{summary.preferredSuppliers || 0}</p>
+                                <p className="text-sm text-gray-500 dark:text-gray-400">Preferred Suppliers</p>
+                                <p className="text-2xl font-bold text-green-600 dark:text-green-400">{summary.preferredSuppliers || 0}</p>
                             </div>
-                            <div className="p-3 bg-green-100 rounded-lg">
-                                <svg className="w-6 h-6 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <div className="p-3 bg-green-100 dark:bg-green-900/30 rounded-lg">
+                                <svg className="w-6 h-6 text-green-600 dark:text-green-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
                                 </svg>
                             </div>
                         </div>
                     </div>
-                    <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-4">
+                    <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 p-4">
                         <div className="flex items-center justify-between">
                             <div>
-                                <p className="text-sm text-gray-500">Total Orders</p>
-                                <p className="text-2xl font-bold text-purple-600">{summary.totalOrders || 0}</p>
+                                <p className="text-sm text-gray-500 dark:text-gray-400">Total Orders</p>
+                                <p className="text-2xl font-bold text-purple-600 dark:text-purple-400">{summary.totalOrders || 0}</p>
                             </div>
-                            <div className="p-3 bg-purple-100 rounded-lg">
-                                <svg className="w-6 h-6 text-purple-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <div className="p-3 bg-purple-100 dark:bg-purple-900/30 rounded-lg">
+                                <svg className="w-6 h-6 text-purple-600 dark:text-purple-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 11V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z" />
                                 </svg>
                             </div>
@@ -270,12 +281,12 @@ function Suppliers() {
             )}
 
             {/* Search and Filter Bar */}
-            <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-4 mb-6">
+            <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 p-4 mb-6">
                 <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
                     <div className="flex items-center gap-4 flex-1">
                         {/* Search */}
                         <div className="relative flex-1 max-w-md">
-                            <svg className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <svg className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400 dark:text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
                             </svg>
                             <input
@@ -286,7 +297,7 @@ function Suppliers() {
                                     handleSearch(e.target.value);
                                 }}
                                 placeholder="Search suppliers..."
-                                className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-transparent"
+                                className="w-full pl-10 pr-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-transparent bg-white dark:bg-gray-700 dark:text-white dark:placeholder-gray-400"
                             />
                         </div>
 
@@ -298,7 +309,7 @@ function Suppliers() {
                                 onChange={(e) => handlePreferredFilter(e.target.checked)}
                                 className="w-4 h-4 text-orange-500 rounded focus:ring-orange-500"
                             />
-                            <span className="text-sm text-gray-700">Preferred Only</span>
+                            <span className="text-sm text-gray-700 dark:text-gray-300">Preferred Only</span>
                         </label>
                     </div>
 
@@ -317,24 +328,24 @@ function Suppliers() {
 
             {/* Error Message */}
             {error && (
-                <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-xl mb-6">
+                <div className="bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 text-red-700 dark:text-red-400 px-4 py-3 rounded-xl mb-6">
                     {error}
                 </div>
             )}
 
             {/* Suppliers Table */}
-            <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
+            <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 overflow-hidden">
                 {loading ? (
                     <div className="flex items-center justify-center py-12">
                         <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-orange-500"></div>
-                        <span className="ml-3 text-gray-500">Loading suppliers...</span>
+                        <span className="ml-3 text-gray-500 dark:text-gray-400">Loading suppliers...</span>
                     </div>
                 ) : suppliers.length === 0 ? (
                     <div className="text-center py-12">
-                        <svg className="w-16 h-16 mx-auto text-gray-300 mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <svg className="w-16 h-16 mx-auto text-gray-300 dark:text-gray-600 mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" />
                         </svg>
-                        <p className="text-gray-500">No suppliers found</p>
+                        <p className="text-gray-500 dark:text-gray-400">No suppliers found</p>
                         <button onClick={handleAddNew} className="mt-4 text-orange-500 hover:text-orange-600 font-medium">
                             Add your first supplier
                         </button>
@@ -342,51 +353,51 @@ function Suppliers() {
                 ) : (
                     <div className="overflow-x-auto">
                         <table className="w-full">
-                            <thead className="bg-gray-50 border-b border-gray-200">
+                            <thead className="bg-gray-50 dark:bg-gray-700/50 border-b border-gray-200 dark:border-gray-700">
                                 <tr>
-                                    <th className="text-left px-6 py-4 text-xs font-semibold text-gray-500 uppercase tracking-wider">Supplier</th>
-                                    <th className="text-left px-6 py-4 text-xs font-semibold text-gray-500 uppercase tracking-wider">Contact</th>
-                                    <th className="text-left px-6 py-4 text-xs font-semibold text-gray-500 uppercase tracking-wider">Address</th>
-                                    <th className="text-center px-6 py-4 text-xs font-semibold text-gray-500 uppercase tracking-wider">Total Orders</th>
-                                    <th className="text-center px-6 py-4 text-xs font-semibold text-gray-500 uppercase tracking-wider">Last Order</th>
-                                    <th className="text-center px-6 py-4 text-xs font-semibold text-gray-500 uppercase tracking-wider">Status</th>
-                                    <th className="text-center px-6 py-4 text-xs font-semibold text-gray-500 uppercase tracking-wider">Actions</th>
+                                    <th className="text-left px-6 py-4 text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider">Supplier</th>
+                                    <th className="text-left px-6 py-4 text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider">Contact</th>
+                                    <th className="text-left px-6 py-4 text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider">Address</th>
+                                    <th className="text-center px-6 py-4 text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider">Total Orders</th>
+                                    <th className="text-center px-6 py-4 text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider">Last Order</th>
+                                    <th className="text-center px-6 py-4 text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider">Status</th>
+                                    <th className="text-center px-6 py-4 text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider">Actions</th>
                                 </tr>
                             </thead>
-                            <tbody className="divide-y divide-gray-100">
+                            <tbody className="divide-y divide-gray-100 dark:divide-gray-700">
                                 {suppliers.map((supplier) => (
-                                    <tr key={supplier.supplierId} className="hover:bg-gray-50 transition-colors">
+                                    <tr key={supplier.supplierId} className="hover:bg-gray-50 dark:hover:bg-gray-700/50 transition-colors">
                                         <td className="px-6 py-4">
                                             <div className="flex items-center">
                                                 <div className="w-10 h-10 bg-gradient-to-br from-purple-400 to-purple-600 rounded-full flex items-center justify-center text-white font-semibold mr-3">
                                                     {supplier.supplierName?.charAt(0).toUpperCase()}
                                                 </div>
                                                 <div>
-                                                    <div className="font-medium text-gray-900">{supplier.supplierName}</div>
+                                                    <div className="font-medium text-gray-900 dark:text-white">{supplier.supplierName}</div>
                                                     {supplier.contactPerson && (
-                                                        <div className="text-xs text-gray-500">Contact: {supplier.contactPerson}</div>
+                                                        <div className="text-xs text-gray-500 dark:text-gray-400">Contact: {supplier.contactPerson}</div>
                                                     )}
                                                 </div>
                                             </div>
                                         </td>
                                         <td className="px-6 py-4">
-                                            <div className="text-sm text-gray-900">{supplier.contactNumber || "-"}</div>
+                                            <div className="text-sm text-gray-900 dark:text-gray-300">{supplier.contactNumber || "-"}</div>
                                         </td>
                                         <td className="px-6 py-4">
-                                            <div className="text-sm text-gray-600 max-w-xs truncate">{supplier.address || "-"}</div>
+                                            <div className="text-sm text-gray-600 dark:text-gray-400 max-w-xs truncate">{supplier.address || "-"}</div>
                                         </td>
                                         <td className="px-6 py-4 text-center">
-                                            <span className="font-medium text-gray-900">{supplier.totalOrders || 0}</span>
+                                            <span className="font-medium text-gray-900 dark:text-white">{supplier.totalOrders || 0}</span>
                                         </td>
                                         <td className="px-6 py-4 text-center">
-                                            <span className="text-sm text-gray-600">{formatDate(supplier.lastOrderDate)}</span>
+                                            <span className="text-sm text-gray-600 dark:text-gray-400">{formatDate(supplier.lastOrderDate)}</span>
                                         </td>
                                         <td className="px-6 py-4 text-center">
                                             <button
                                                 onClick={() => togglePreferred(supplier.supplierId)}
                                                 className={`px-3 py-1 text-xs font-medium rounded-full transition-colors ${supplier.isPreferred
-                                                    ? 'bg-green-100 text-green-700 hover:bg-green-200'
-                                                    : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
+                                                    ? 'bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-400 hover:bg-green-200 dark:hover:bg-green-900/50'
+                                                    : 'bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-400 hover:bg-gray-200 dark:hover:bg-gray-600'
                                                     }`}
                                             >
                                                 {supplier.isPreferred ? '★ Preferred' : 'Standard'}
@@ -396,7 +407,7 @@ function Suppliers() {
                                             <div className="flex items-center justify-center gap-2">
                                                 <button
                                                     onClick={() => handleEdit(supplier)}
-                                                    className="p-2 text-gray-500 hover:text-orange-500 hover:bg-orange-50 rounded-lg transition-colors"
+                                                    className="p-2 text-gray-500 dark:text-gray-400 hover:text-orange-500 hover:bg-orange-50 dark:hover:bg-orange-900/20 rounded-lg transition-colors"
                                                     title="Edit"
                                                 >
                                                     <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -405,7 +416,7 @@ function Suppliers() {
                                                 </button>
                                                 <button
                                                     onClick={() => handleDelete(supplier.supplierId)}
-                                                    className="p-2 text-gray-500 hover:text-red-500 hover:bg-red-50 rounded-lg transition-colors"
+                                                    className="p-2 text-gray-500 dark:text-gray-400 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-lg transition-colors"
                                                     title="Delete"
                                                 >
                                                     <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -424,23 +435,23 @@ function Suppliers() {
 
             {/* Supplier Count */}
             {!loading && suppliers.length > 0 && (
-                <div className="mt-4 text-sm text-gray-500">
+                <div className="mt-4 text-sm text-gray-500 dark:text-gray-400">
                     Showing {suppliers.length} suppliers
                 </div>
             )}
 
             {/* Add/Edit Supplier Modal */}
             {showModal && (
-                <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
-                    <div className="bg-white rounded-2xl shadow-xl w-full max-w-md">
+                <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4 backdrop-blur-sm">
+                    <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-xl w-full max-w-md">
                         {/* Modal Header */}
-                        <div className="flex items-center justify-between p-6 border-b border-gray-200">
-                            <h2 className="text-xl font-bold text-gray-900">
+                        <div className="flex items-center justify-between p-6 border-b border-gray-200 dark:border-gray-700">
+                            <h2 className="text-xl font-bold text-gray-900 dark:text-white">
                                 {editingSupplier ? "Edit Supplier" : "Add New Supplier"}
                             </h2>
                             <button
                                 onClick={() => setShowModal(false)}
-                                className="p-2 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-lg transition-colors"
+                                className="p-2 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg transition-colors"
                             >
                                 <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
@@ -451,14 +462,14 @@ function Suppliers() {
                         {/* Modal Body */}
                         <form onSubmit={handleSubmit} className="p-6 space-y-4">
                             {formError && (
-                                <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-xl text-sm">
+                                <div className="bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 text-red-700 dark:text-red-400 px-4 py-3 rounded-xl text-sm">
                                     {formError}
                                 </div>
                             )}
 
                             {/* Supplier Name */}
                             <div>
-                                <label className="block text-sm font-medium text-gray-700 mb-1">
+                                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
                                     Supplier Name <span className="text-red-500">*</span>
                                 </label>
                                 <input
@@ -466,56 +477,64 @@ function Suppliers() {
                                     name="supplierName"
                                     value={formData.supplierName}
                                     onChange={handleInputChange}
-                                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-transparent"
+                                    className={`w-full px-4 py-2 border ${fieldErrors.supplierName ? 'border-red-500' : 'border-gray-300 dark:border-gray-600'} bg-white dark:bg-gray-700 text-gray-900 dark:text-white rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-transparent placeholder-gray-400 dark:placeholder-gray-500`}
                                     placeholder="Enter supplier name"
                                 />
+                                {fieldErrors.supplierName && (
+                                    <p className="mt-1 text-sm text-red-500">{fieldErrors.supplierName}</p>
+                                )}
                             </div>
 
                             {/* Contact Person */}
                             <div>
-                                <label className="block text-sm font-medium text-gray-700 mb-1">Contact Person</label>
+                                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Contact Person</label>
                                 <input
                                     type="text"
                                     name="contactPerson"
                                     value={formData.contactPerson}
                                     onChange={handleInputChange}
-                                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-transparent"
+                                    className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-white rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-transparent placeholder-gray-400 dark:placeholder-gray-500"
                                     placeholder="Contact person name"
                                 />
                             </div>
 
                             {/* Contact Number */}
                             <div>
-                                <label className="block text-sm font-medium text-gray-700 mb-1">Contact Number</label>
+                                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                                    Contact Number <span className="text-red-500">*</span>
+                                </label>
                                 <input
                                     type="text"
                                     name="contactNumber"
                                     value={formData.contactNumber}
                                     onChange={handleInputChange}
-                                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-transparent"
+                                    className={`w-full px-4 py-2 border ${fieldErrors.contactNumber ? 'border-red-500' : 'border-gray-300 dark:border-gray-600'} bg-white dark:bg-gray-700 text-gray-900 dark:text-white rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-transparent placeholder-gray-400 dark:placeholder-gray-500`}
                                     placeholder="Phone number"
                                 />
+                                {fieldErrors.contactNumber && (
+                                    <p className="mt-1 text-sm text-red-500">{fieldErrors.contactNumber}</p>
+                                )}
                             </div>
 
                             {/* Address */}
                             <div>
-                                <label className="block text-sm font-medium text-gray-700 mb-1">Address</label>
+                                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Address</label>
                                 <textarea
                                     name="address"
                                     value={formData.address}
                                     onChange={handleInputChange}
                                     rows="3"
-                                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-transparent resize-none"
+                                    className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-white rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-transparent resize-none placeholder-gray-400 dark:placeholder-gray-500"
                                     placeholder="Supplier address"
                                 />
                             </div>
 
                             {/* Modal Footer */}
-                            <div className="flex items-center justify-end gap-3 pt-4 border-t border-gray-200">
+                            <div className="flex items-center justify-end gap-3 pt-4 border-t border-gray-200 dark:border-gray-700">
                                 <button
                                     type="button"
                                     onClick={() => setShowModal(false)}
-                                    className="px-4 py-2 text-gray-700 hover:bg-gray-100 rounded-lg transition-colors"
+                                    className="px-4 py-2 text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg transition-colors"
                                 >
                                     Cancel
                                 </button>

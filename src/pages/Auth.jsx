@@ -86,9 +86,9 @@ export default function Auth() {
       login(data);
 
       if (data.requiresPasswordChange) {
-        navigate("/change-credentials");
+        navigate("/update-credentials");
       } else {
-        navigate("/");
+        navigate("/dashboard");
       }
     } catch (err) {
       setError(err.message || 'Login failed. Please try again.');
@@ -160,12 +160,14 @@ export default function Auth() {
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center p-4 lg:p-8 relative overflow-hidden">
+    <div className="min-h-screen flex items-center justify-center p-4 lg:p-8 relative overflow-hidden bg-gray-50 dark:bg-gray-900">
       {/* Background image with wave animation */}
       <div
         className="absolute inset-0 bg-cover bg-center bg-no-repeat animate-wave"
         style={{ backgroundImage: `url(${authBg})` }}
       />
+      {/* Dark mode overlay for background */}
+      <div className="absolute inset-0 bg-black/0 dark:bg-black/40 transition-colors duration-500 pointer-events-none" />
 
       {/* CSS for wave animation */}
       <style jsx>{`
@@ -195,12 +197,12 @@ export default function Auth() {
         {/* Login Form - RIGHT side */}
         <div
           className={`absolute right-0 top-0 w-[calc(50%-10px)] h-full flex items-center justify-center transition-all duration-700 ease-[cubic-bezier(0.68,-0.15,0.32,1.15)] ${isLogin
-              ? "opacity-100 scale-100 z-10"
-              : "opacity-0 scale-95 pointer-events-none z-0"
+            ? "opacity-100 scale-100 z-10"
+            : "opacity-0 scale-95 pointer-events-none z-0"
             }`}
         >
           {/* Extended container - rounded only on right, extends off left edge */}
-          <div className="bg-gradient-to-br from-orange-50/80 to-white/90 backdrop-blur-sm rounded-r-3xl shadow-2xl p-8 w-[calc(100%+100px)] h-[520px] flex flex-col -ml-[100px]">
+          <div className="bg-gradient-to-br from-orange-50/80 to-white/90 dark:from-gray-900/90 dark:to-gray-800/90 backdrop-blur-sm rounded-r-3xl shadow-2xl p-8 w-[calc(100%+100px)] h-[520px] flex flex-col -ml-[100px] border border-white/20 dark:border-gray-700">
             <div className="w-[calc(100%-100px)] ml-auto">
               <div className="mb-2">
                 <h1 className="text-3xl font-bold bg-gradient-to-r from-orange-500 to-yellow-500 bg-clip-text text-transparent text-center pb-1">
@@ -208,13 +210,13 @@ export default function Auth() {
                 </h1>
 
                 {successMessage && (
-                  <div className="bg-green-50 border border-green-200 text-green-700 px-4 py-3 rounded-xl text-sm mt-4">
+                  <div className="bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800 text-green-700 dark:text-green-400 px-4 py-3 rounded-xl text-sm mt-4">
                     {successMessage}
                   </div>
                 )}
 
                 {error && isLogin && (
-                  <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-xl text-sm mt-4">
+                  <div className="bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 text-red-700 dark:text-red-400 px-4 py-3 rounded-xl text-sm mt-4">
                     {error}
                   </div>
                 )}
@@ -229,13 +231,13 @@ export default function Auth() {
                     onChange={(e) => setUsername(e.target.value)}
                     onKeyPress={handleKeyPress}
                     disabled={loading}
-                    className="w-full px-4 py-3 bg-transparent border-b-2 border-gray-300 focus:border-orange-500 outline-none transition-colors placeholder-transparent peer"
+                    className="w-full px-4 py-3 bg-transparent border-b-2 border-gray-300 dark:border-gray-600 focus:border-orange-500 dark:focus:border-orange-500 outline-none transition-colors placeholder-transparent peer text-gray-900 dark:text-white"
                     placeholder="Username"
                   />
-                  <label className="absolute left-0 top-1 text-sm font-medium text-gray-700 transition-all peer-placeholder-shown:text-base peer-placeholder-shown:top-8 peer-placeholder-shown:text-gray-400 peer-focus:top-1 peer-focus:text-sm peer-focus:text-orange-500">
+                  <label className="absolute left-0 top-1 text-sm font-medium text-gray-700 dark:text-gray-300 transition-all peer-placeholder-shown:text-base peer-placeholder-shown:top-8 peer-placeholder-shown:text-gray-400 dark:peer-placeholder-shown:text-gray-500 peer-focus:top-1 peer-focus:text-sm peer-focus:text-orange-500 dark:peer-focus:text-orange-400">
                     Username
                   </label>
-                  <svg className="absolute right-2 top-8 w-5 h-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <svg className="absolute right-2 top-8 w-5 h-5 text-gray-400 dark:text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
                   </svg>
                 </div>
@@ -250,10 +252,10 @@ export default function Auth() {
                     onFocus={() => setPasswordFocused(true)}
                     onBlur={() => setPasswordFocused(false)}
                     disabled={loading}
-                    className="w-full px-4 py-3 bg-transparent border-b-2 border-gray-300 focus:border-orange-500 outline-none transition-colors placeholder-transparent peer [&::-ms-reveal]:hidden [&::-webkit-credentials-auto-fill-button]:hidden"
+                    className="w-full px-4 py-3 bg-transparent border-b-2 border-gray-300 dark:border-gray-600 focus:border-orange-500 dark:focus:border-orange-500 outline-none transition-colors placeholder-transparent peer [&::-ms-reveal]:hidden [&::-webkit-credentials-auto-fill-button]:hidden text-gray-900 dark:text-white"
                     placeholder="Password"
                   />
-                  <label className="absolute left-0 top-1 text-sm font-medium text-gray-700 transition-all peer-placeholder-shown:text-base peer-placeholder-shown:top-8 peer-placeholder-shown:text-gray-400 peer-focus:top-1 peer-focus:text-sm peer-focus:text-orange-500">
+                  <label className="absolute left-0 top-1 text-sm font-medium text-gray-700 dark:text-gray-300 transition-all peer-placeholder-shown:text-base peer-placeholder-shown:top-8 peer-placeholder-shown:text-gray-400 dark:peer-placeholder-shown:text-gray-500 peer-focus:top-1 peer-focus:text-sm peer-focus:text-orange-500 dark:peer-focus:text-orange-400">
                     Password
                   </label>
                   {passwordFocused ? (
@@ -261,7 +263,7 @@ export default function Auth() {
                       type="button"
                       onMouseDown={(e) => e.preventDefault()}
                       onClick={() => setShowPassword(!showPassword)}
-                      className="absolute right-2 top-8 w-5 h-5 text-gray-400 hover:text-gray-600 transition-colors"
+                      className="absolute right-2 top-8 w-5 h-5 text-gray-400 hover:text-gray-600 dark:text-gray-500 dark:hover:text-gray-300 transition-colors"
                     >
                       {showPassword ? (
                         <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -275,7 +277,7 @@ export default function Auth() {
                       )}
                     </button>
                   ) : (
-                    <svg className="absolute right-2 top-8 w-5 h-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <svg className="absolute right-2 top-8 w-5 h-5 text-gray-400 dark:text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
                     </svg>
                   )}
@@ -290,12 +292,12 @@ export default function Auth() {
                       onChange={(e) => setRememberMe(e.target.checked)}
                       className="w-4 h-4 accent-orange-500 rounded"
                     />
-                    <span className="ml-2 text-gray-700">Remember me</span>
+                    <span className="ml-2 text-gray-700 dark:text-gray-300">Remember me</span>
                   </label>
                   <button
                     type="button"
                     onClick={() => alert("Password reset not implemented")}
-                    className="text-gray-600 hover:text-orange-500 transition-colors"
+                    className="text-gray-600 dark:text-gray-400 hover:text-orange-500 dark:hover:text-orange-400 transition-colors"
                   >
                     Forgot Password?
                   </button>
@@ -313,9 +315,9 @@ export default function Auth() {
                 </button>
 
                 {/* Toggle Link */}
-                <p className="text-center text-sm text-gray-600">
+                <p className="text-center text-sm text-gray-600 dark:text-gray-400">
                   New Here?{" "}
-                  <button onClick={toggleMode} className="text-orange-500 hover:text-orange-600 font-semibold transition-colors">
+                  <button onClick={toggleMode} className="text-orange-500 hover:text-orange-600 dark:text-orange-400 dark:hover:text-orange-300 font-semibold transition-colors">
                     Create an Account
                   </button>
                 </p>
@@ -327,29 +329,29 @@ export default function Auth() {
         {/* Register Form - LEFT side */}
         <div
           className={`absolute left-0 top-0 w-[calc(50%-10px)] h-full flex items-center justify-center transition-all duration-700 ease-[cubic-bezier(0.68,-0.15,0.32,1.15)] ${isLogin
-              ? "opacity-0 scale-95 pointer-events-none z-0"
-              : "opacity-100 scale-100 z-10"
+            ? "opacity-0 scale-95 pointer-events-none z-0"
+            : "opacity-100 scale-100 z-10"
             }`}
         >
           {/* Extended container - rounded only on left, extends off right edge */}
-          <div className="bg-gradient-to-br from-orange-50/80 to-white/90 backdrop-blur-sm rounded-l-3xl shadow-2xl p-8 w-[calc(100%+100px)] h-[520px] flex flex-col -mr-[100px]">
-            <div className="w-[calc(100%-100px)] h-full flex flex-col">
+          <div className="bg-gradient-to-br from-orange-50/80 to-white/90 dark:from-gray-900/90 dark:to-gray-800/90 backdrop-blur-sm rounded-l-3xl shadow-2xl p-8 w-[calc(100%+100px)] min-h-[520px] max-h-[580px] overflow-y-auto flex flex-col -mr-[100px] border border-white/20 dark:border-gray-700">
+            <div className="w-[calc(100%-100px)] flex flex-col pb-6">
               <div className="mb-3">
                 <h1 className="text-2xl font-bold bg-gradient-to-r from-orange-500 to-yellow-500 bg-clip-text text-transparent text-center">
                   Create a Kaabuy Account
                 </h1>
-                <p className="text-xs text-center text-gray-600 mt-2">
+                <p className="text-xs text-center text-gray-600 dark:text-gray-400 mt-2">
                   Owner account with full access
                 </p>
 
                 {error && !isLogin && (
-                  <div className="bg-red-50 border border-red-200 text-red-700 px-3 py-2 rounded-xl text-xs mt-3">
+                  <div className="bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 text-red-700 dark:text-red-400 px-4 py-3 rounded-xl text-sm mt-2 mb-1">
                     {error}
                   </div>
                 )}
               </div>
 
-              <div className="flex-1 gap-1 flex flex-col justify-center space-y-5">
+              <div className={`flex-1 gap-3 flex flex-col justify-center ${error ? 'space-y-2' : 'space-y-5'}`}>
                 {/* First Name & Last Name - Side by side */}
                 <div className="flex gap-4">
                   <div className="relative flex-1">
@@ -359,10 +361,10 @@ export default function Auth() {
                       onChange={(e) => setFirstName(e.target.value)}
                       onKeyPress={handleKeyPress}
                       disabled={loading}
-                      className="w-full px-2 py-3 bg-transparent border-b-2 border-gray-300 focus:border-orange-500 outline-none transition-colors placeholder-transparent peer"
+                      className="w-full px-2 py-2.5 bg-transparent border-b-2 border-gray-300 dark:border-gray-600 focus:border-orange-500 dark:focus:border-orange-500 outline-none transition-colors placeholder-transparent peer text-gray-900 dark:text-white"
                       placeholder="First Name"
                     />
-                    <label className="absolute left-0 -top-5 text-sm font-medium text-gray-700 transition-all peer-placeholder-shown:text-sm peer-placeholder-shown:top-3 peer-placeholder-shown:text-gray-400 peer-focus:-top-5 peer-focus:text-sm peer-focus:text-orange-500">
+                    <label className="absolute left-0 -top-5 text-sm font-medium text-gray-700 dark:text-gray-300 transition-all peer-placeholder-shown:text-sm peer-placeholder-shown:top-3 peer-placeholder-shown:text-gray-400 dark:peer-placeholder-shown:text-gray-500 peer-focus:-top-5 peer-focus:text-sm peer-focus:text-orange-500 dark:peer-focus:text-orange-400">
                       First Name
                     </label>
                   </div>
@@ -373,10 +375,10 @@ export default function Auth() {
                       onChange={(e) => setLastName(e.target.value)}
                       onKeyPress={handleKeyPress}
                       disabled={loading}
-                      className="w-full px-2 py-3 bg-transparent border-b-2 border-gray-300 focus:border-orange-500 outline-none transition-colors placeholder-transparent peer"
+                      className="w-full px-2 py-2.5 bg-transparent border-b-2 border-gray-300 dark:border-gray-600 focus:border-orange-500 dark:focus:border-orange-500 outline-none transition-colors placeholder-transparent peer text-gray-900 dark:text-white"
                       placeholder="Last Name"
                     />
-                    <label className="absolute left-0 -top-5 text-sm font-medium text-gray-700 transition-all peer-placeholder-shown:text-sm peer-placeholder-shown:top-3 peer-placeholder-shown:text-gray-400 peer-focus:-top-5 peer-focus:text-sm peer-focus:text-orange-500">
+                    <label className="absolute left-0 -top-5 text-sm font-medium text-gray-700 dark:text-gray-300 transition-all peer-placeholder-shown:text-sm peer-placeholder-shown:top-3 peer-placeholder-shown:text-gray-400 dark:peer-placeholder-shown:text-gray-500 peer-focus:-top-5 peer-focus:text-sm peer-focus:text-orange-500 dark:peer-focus:text-orange-400">
                       Last Name
                     </label>
                   </div>
@@ -390,13 +392,13 @@ export default function Auth() {
                     onChange={(e) => setStoreName(e.target.value)}
                     onKeyPress={handleKeyPress}
                     disabled={loading}
-                    className="w-full px-4 py-3 bg-transparent border-b-2 border-gray-300 focus:border-orange-500 outline-none transition-colors placeholder-transparent peer"
+                    className="w-full px-4 py-2.5 bg-transparent border-b-2 border-gray-300 dark:border-gray-600 focus:border-orange-500 dark:focus:border-orange-500 outline-none transition-colors placeholder-transparent peer text-gray-900 dark:text-white"
                     placeholder="Store Name"
                   />
-                  <label className="absolute left-0 -top-5 text-sm font-medium text-gray-700 transition-all peer-placeholder-shown:text-sm peer-placeholder-shown:top-3 peer-placeholder-shown:text-gray-400 peer-focus:-top-5 peer-focus:text-sm peer-focus:text-orange-500">
+                  <label className="absolute left-0 -top-5 text-sm font-medium text-gray-700 dark:text-gray-300 transition-all peer-placeholder-shown:text-sm peer-placeholder-shown:top-3 peer-placeholder-shown:text-gray-400 dark:peer-placeholder-shown:text-gray-500 peer-focus:-top-5 peer-focus:text-sm peer-focus:text-orange-500 dark:peer-focus:text-orange-400">
                     Store Name
                   </label>
-                  <svg className="absolute right-2 top-3 w-5 h-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <svg className="absolute right-2 top-3 w-5 h-5 text-gray-400 dark:text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
                   </svg>
                 </div>
@@ -409,13 +411,13 @@ export default function Auth() {
                     onChange={(e) => setRegUsername(e.target.value)}
                     onKeyPress={handleKeyPress}
                     disabled={loading}
-                    className="w-full px-4 py-3 bg-transparent border-b-2 border-gray-300 focus:border-orange-500 outline-none transition-colors placeholder-transparent peer"
+                    className="w-full px-4 py-2.5 bg-transparent border-b-2 border-gray-300 dark:border-gray-600 focus:border-orange-500 dark:focus:border-orange-500 outline-none transition-colors placeholder-transparent peer text-gray-900 dark:text-white"
                     placeholder="Username"
                   />
-                  <label className="absolute left-0 -top-5 text-sm font-medium text-gray-700 transition-all peer-placeholder-shown:text-sm peer-placeholder-shown:top-3 peer-placeholder-shown:text-gray-400 peer-focus:-top-5 peer-focus:text-sm peer-focus:text-orange-500">
+                  <label className="absolute left-0 -top-5 text-sm font-medium text-gray-700 dark:text-gray-300 transition-all peer-placeholder-shown:text-sm peer-placeholder-shown:top-3 peer-placeholder-shown:text-gray-400 dark:peer-placeholder-shown:text-gray-500 peer-focus:-top-5 peer-focus:text-sm peer-focus:text-orange-500 dark:peer-focus:text-orange-400">
                     Username
                   </label>
-                  <svg className="absolute right-2 top-3 w-5 h-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <svg className="absolute right-2 top-3 w-5 h-5 text-gray-400 dark:text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
                   </svg>
                 </div>
@@ -430,10 +432,10 @@ export default function Auth() {
                     onFocus={() => setRegPasswordFocused(true)}
                     onBlur={() => setRegPasswordFocused(false)}
                     disabled={loading}
-                    className="w-full px-4 py-3 bg-transparent border-b-2 border-gray-300 focus:border-orange-500 outline-none transition-colors placeholder-transparent peer [&::-ms-reveal]:hidden [&::-webkit-credentials-auto-fill-button]:hidden"
+                    className="w-full px-4 py-2.5 bg-transparent border-b-2 border-gray-300 dark:border-gray-600 focus:border-orange-500 dark:focus:border-orange-500 outline-none transition-colors placeholder-transparent peer [&::-ms-reveal]:hidden [&::-webkit-credentials-auto-fill-button]:hidden text-gray-900 dark:text-white"
                     placeholder="Password"
                   />
-                  <label className="absolute left-0 -top-5 text-sm font-medium text-gray-700 transition-all peer-placeholder-shown:text-sm peer-placeholder-shown:top-3 peer-placeholder-shown:text-gray-400 peer-focus:-top-5 peer-focus:text-sm peer-focus:text-orange-500">
+                  <label className="absolute left-0 -top-5 text-sm font-medium text-gray-700 dark:text-gray-300 transition-all peer-placeholder-shown:text-sm peer-placeholder-shown:top-3 peer-placeholder-shown:text-gray-400 dark:peer-placeholder-shown:text-gray-500 peer-focus:-top-5 peer-focus:text-sm peer-focus:text-orange-500 dark:peer-focus:text-orange-400">
                     Password
                   </label>
                   {regPasswordFocused ? (
@@ -441,7 +443,7 @@ export default function Auth() {
                       type="button"
                       onMouseDown={(e) => e.preventDefault()}
                       onClick={() => setShowRegPassword(!showRegPassword)}
-                      className="absolute right-2 top-3 w-5 h-5 text-gray-400 hover:text-gray-600 transition-colors"
+                      className="absolute right-2 top-3 w-5 h-5 text-gray-400 hover:text-gray-600 dark:text-gray-500 dark:hover:text-gray-300 transition-colors"
                     >
                       {showRegPassword ? (
                         <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -455,14 +457,14 @@ export default function Auth() {
                       )}
                     </button>
                   ) : (
-                    <svg className="absolute right-2 top-3 w-5 h-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <svg className="absolute right-2 top-3 w-5 h-5 text-gray-400 dark:text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
                     </svg>
                   )}
                 </div>
               </div>
 
-              <div className="space-y-4">
+              <div className="space-y-8 mt-4">
                 {/* Sign Up Button */}
                 <button
                   onClick={handleRegister}
@@ -473,9 +475,9 @@ export default function Auth() {
                 </button>
 
                 {/* Toggle Link */}
-                <p className="text-center text-sm text-gray-600">
+                <p className="text-center text-sm text-gray-600 dark:text-gray-400">
                   Already Have an Account?{" "}
-                  <button onClick={toggleMode} className="text-orange-500 hover:text-orange-600 font-semibold transition-colors">
+                  <button onClick={toggleMode} className="text-orange-500 hover:text-orange-600 dark:text-orange-400 dark:hover:text-orange-300 font-semibold transition-colors">
                     Login
                   </button>
                 </p>

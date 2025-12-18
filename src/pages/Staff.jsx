@@ -40,6 +40,7 @@ function Staff() {
         role: "staff"
     });
     const [formError, setFormError] = useState("");
+    const [fieldErrors, setFieldErrors] = useState({});
     const [formLoading, setFormLoading] = useState(false);
 
     useEffect(() => {
@@ -89,6 +90,7 @@ function Staff() {
             role: "staff"
         });
         setFormError("");
+        setFieldErrors({});
         setShowModal(true);
     };
 
@@ -102,6 +104,7 @@ function Staff() {
             role: staffMember.role
         });
         setFormError("");
+        setFieldErrors({});
         setShowModal(true);
     };
 
@@ -110,8 +113,17 @@ function Staff() {
         setFormError("");
         setFormLoading(true);
 
-        if (!formData.firstName || !formData.lastName || !formData.role || !formData.email) {
-            setFormError("Please fill in all required fields");
+        // Clear previous errors
+        setFieldErrors({});
+
+        // Validate required fields
+        const errors = {};
+        if (!formData.firstName || !formData.firstName.trim()) errors.firstName = "First Name is required";
+        if (!formData.lastName || !formData.lastName.trim()) errors.lastName = "Last Name is required";
+        if (!formData.email || !formData.email.trim()) errors.email = "Email is required";
+
+        if (Object.keys(errors).length > 0) {
+            setFieldErrors(errors);
             setFormLoading(false);
             return;
         }
@@ -186,15 +198,15 @@ function Staff() {
     };
 
     return (
-        <div className="p-6">
+        <div className="p-6 bg-gray-50 dark:bg-gray-900 min-h-screen">
             {/* Page Header */}
             <div className="mb-6">
-                <h1 className="text-2xl font-bold text-gray-900">Staff Management</h1>
-                <p className="text-gray-500 text-sm mt-1">Create staff accounts and manage login credentials for your team</p>
+                <h1 className="text-2xl font-bold text-gray-900 dark:text-white">Staff Management</h1>
+                <p className="text-gray-500 dark:text-gray-400 text-sm mt-1">Create staff accounts and manage login credentials for your team</p>
             </div>
 
             {/* Action Bar */}
-            <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-4 mb-6">
+            <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 p-4 mb-6">
                 <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
                     {/* Search */}
                     <div className="relative flex-1 max-w-md">
@@ -206,7 +218,7 @@ function Staff() {
                             placeholder="Search staff..."
                             value={searchTerm}
                             onChange={(e) => setSearchTerm(e.target.value)}
-                            className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-transparent"
+                            className="w-full pl-10 pr-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-transparent bg-white dark:bg-gray-700 dark:text-white dark:placeholder-gray-400"
                         />
                     </div>
 
@@ -225,24 +237,24 @@ function Staff() {
 
             {/* Error */}
             {error && (
-                <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-xl mb-6">
+                <div className="bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-700 text-red-700 dark:text-red-400 px-4 py-3 rounded-xl mb-6">
                     {error}
                 </div>
             )}
 
             {/* Staff Table */}
-            <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
+            <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 overflow-hidden">
                 {loading ? (
                     <div className="flex items-center justify-center py-12">
                         <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-orange-500"></div>
-                        <span className="ml-3 text-gray-500">Loading staff...</span>
+                        <span className="ml-3 text-gray-500 dark:text-gray-400">Loading staff...</span>
                     </div>
                 ) : filteredStaff.length === 0 ? (
                     <div className="text-center py-12">
-                        <svg className="w-16 h-16 mx-auto text-gray-300 mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <svg className="w-16 h-16 mx-auto text-gray-300 dark:text-gray-600 mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" />
                         </svg>
-                        <p className="text-gray-500">No staff members found</p>
+                        <p className="text-gray-500 dark:text-gray-400">No staff members found</p>
                         <button
                             onClick={handleAddNew}
                             className="mt-4 px-4 py-2 bg-orange-500 hover:bg-orange-600 text-white rounded-lg transition-colors"
@@ -253,25 +265,25 @@ function Staff() {
                 ) : (
                     <div className="overflow-x-auto">
                         <table className="w-full">
-                            <thead className="bg-gray-50 border-b border-gray-200">
+                            <thead className="bg-gray-50 dark:bg-gray-700 border-b border-gray-200 dark:border-gray-600">
                                 <tr>
-                                    <th className="text-left px-6 py-4 text-xs font-semibold text-gray-500 uppercase tracking-wider">Staff Member</th>
-                                    <th className="text-left px-6 py-4 text-xs font-semibold text-gray-500 uppercase tracking-wider">Email</th>
-                                    <th className="text-left px-6 py-4 text-xs font-semibold text-gray-500 uppercase tracking-wider">Store</th>
-                                    <th className="text-center px-6 py-4 text-xs font-semibold text-gray-500 uppercase tracking-wider">Role</th>
-                                    <th className="text-center px-6 py-4 text-xs font-semibold text-gray-500 uppercase tracking-wider">Actions</th>
+                                    <th className="text-left px-6 py-4 text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider">Staff Member</th>
+                                    <th className="text-left px-6 py-4 text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider">Email</th>
+                                    <th className="text-left px-6 py-4 text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider">Store</th>
+                                    <th className="text-center px-6 py-4 text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider">Role</th>
+                                    <th className="text-center px-6 py-4 text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider">Actions</th>
                                 </tr>
                             </thead>
-                            <tbody className="divide-y divide-gray-100">
+                            <tbody className="divide-y divide-gray-100 dark:divide-gray-700">
                                 {filteredStaff.map((staffMember) => (
-                                    <tr key={staffMember.staffId} className="hover:bg-gray-50 transition-colors">
+                                    <tr key={staffMember.staffId} className="hover:bg-gray-50 dark:hover:bg-gray-700/50 transition-colors">
                                         <td className="px-6 py-4">
-                                            <div className="font-medium text-gray-900">{staffMember.firstName} {staffMember.lastName}</div>
+                                            <div className="font-medium text-gray-900 dark:text-white">{staffMember.firstName} {staffMember.lastName}</div>
                                         </td>
-                                        <td className="px-6 py-4 text-gray-600">
+                                        <td className="px-6 py-4 text-gray-600 dark:text-gray-400">
                                             {staffMember.email}
                                         </td>
-                                        <td className="px-6 py-4 text-gray-600">
+                                        <td className="px-6 py-4 text-gray-600 dark:text-gray-400">
                                             {staffMember.storeName || "-"}
                                         </td>
                                         <td className="px-6 py-4 text-center">
@@ -283,7 +295,7 @@ function Staff() {
                                             <div className="flex items-center justify-center gap-2">
                                                 <button
                                                     onClick={() => handleEdit(staffMember)}
-                                                    className="p-2 text-gray-500 hover:text-orange-500 hover:bg-orange-50 rounded-lg transition-colors"
+                                                    className="p-2 text-gray-500 dark:text-gray-400 hover:text-orange-500 dark:hover:text-orange-400 hover:bg-orange-50 dark:hover:bg-orange-900/20 rounded-lg transition-colors"
                                                     title="Edit"
                                                 >
                                                     <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -293,7 +305,7 @@ function Staff() {
                                                 {user?.username !== staffMember.username && (
                                                     <button
                                                         onClick={() => handleDelete(staffMember.staffId)}
-                                                        className="p-2 text-gray-500 hover:text-red-500 hover:bg-red-50 rounded-lg transition-colors"
+                                                        className="p-2 text-gray-500 dark:text-gray-400 hover:text-red-500 dark:hover:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-lg transition-colors"
                                                         title="Delete"
                                                     >
                                                         <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -313,7 +325,7 @@ function Staff() {
 
             {/* Staff Count */}
             {!loading && filteredStaff.length > 0 && (
-                <div className="mt-4 text-sm text-gray-500">
+                <div className="mt-4 text-sm text-gray-500 dark:text-gray-400">
                     Showing {filteredStaff.length} of {staff.length} staff members
                 </div>
             )}
@@ -321,14 +333,14 @@ function Staff() {
             {/* Add/Edit Modal */}
             {showModal && (
                 <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
-                    <div className="bg-white rounded-xl shadow-xl max-w-md w-full max-h-[90vh] overflow-y-auto">
+                    <div className="bg-white dark:bg-gray-800 rounded-xl shadow-xl max-w-md w-full max-h-[90vh] overflow-y-auto">
                         <div className="p-6">
-                            <h2 className="text-xl font-bold text-gray-900 mb-4">
+                            <h2 className="text-xl font-bold text-gray-900 dark:text-white mb-4">
                                 {editingStaff ? "Edit Staff" : "Add New Staff"}
                             </h2>
 
                             {formError && (
-                                <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-lg mb-4 text-sm">
+                                <div className="bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-700 text-red-700 dark:text-red-400 px-4 py-3 rounded-lg mb-4 text-sm">
                                     {formError}
                                 </div>
                             )}
@@ -336,7 +348,7 @@ function Staff() {
                             <form onSubmit={handleSubmit} className="space-y-4">
                                 {/* Email */}
                                 <div>
-                                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
                                         Email <span className="text-red-500">*</span>
                                     </label>
                                     <input
@@ -344,11 +356,13 @@ function Staff() {
                                         name="email"
                                         value={formData.email}
                                         onChange={handleInputChange}
-                                        className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-transparent"
+                                        className={`w-full px-4 py-2 border ${fieldErrors.email ? 'border-red-500' : 'border-gray-300 dark:border-gray-600'} rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-transparent bg-white dark:bg-gray-700 dark:text-white`}
                                         placeholder="john@example.com"
-                                        required
                                     />
-                                    <p className="mt-1 text-xs text-gray-500">
+                                    {fieldErrors.email && (
+                                        <p className="mt-1 text-sm text-red-500">{fieldErrors.email}</p>
+                                    )}
+                                    <p className="mt-1 text-xs text-gray-500 dark:text-gray-400">
                                         An invite with login credentials will be sent to this email.
                                     </p>
                                 </div>
@@ -356,7 +370,7 @@ function Staff() {
                                 {/* First Name & Last Name */}
                                 <div className="grid grid-cols-2 gap-4">
                                     <div>
-                                        <label className="block text-sm font-medium text-gray-700 mb-1">
+                                        <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
                                             First Name <span className="text-red-500">*</span>
                                         </label>
                                         <input
@@ -364,13 +378,15 @@ function Staff() {
                                             name="firstName"
                                             value={formData.firstName}
                                             onChange={handleInputChange}
-                                            className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-transparent"
+                                            className={`w-full px-4 py-2 border ${fieldErrors.firstName ? 'border-red-500' : 'border-gray-300 dark:border-gray-600'} rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-transparent bg-white dark:bg-gray-700 dark:text-white`}
                                             placeholder="John"
-                                            required
                                         />
+                                        {fieldErrors.firstName && (
+                                            <p className="mt-1 text-sm text-red-500">{fieldErrors.firstName}</p>
+                                        )}
                                     </div>
                                     <div>
-                                        <label className="block text-sm font-medium text-gray-700 mb-1">
+                                        <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
                                             Last Name <span className="text-red-500">*</span>
                                         </label>
                                         <input
@@ -378,52 +394,34 @@ function Staff() {
                                             name="lastName"
                                             value={formData.lastName}
                                             onChange={handleInputChange}
-                                            className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-transparent"
+                                            className={`w-full px-4 py-2 border ${fieldErrors.lastName ? 'border-red-500' : 'border-gray-300 dark:border-gray-600'} rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-transparent bg-white dark:bg-gray-700 dark:text-white`}
                                             placeholder="Doe"
-                                            required
                                         />
+                                        {fieldErrors.lastName && (
+                                            <p className="mt-1 text-sm text-red-500">{fieldErrors.lastName}</p>
+                                        )}
                                     </div>
                                 </div>
 
                                 {/* Store Name */}
                                 <div>
-                                    <label className="block text-sm font-medium text-gray-700 mb-1">Store Name</label>
+                                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Store Name</label>
                                     <input
                                         type="text"
                                         name="storeName"
                                         value={formData.storeName}
                                         onChange={handleInputChange}
-                                        className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-transparent"
+                                        className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-transparent bg-white dark:bg-gray-700 dark:text-white"
                                         placeholder="Main Store"
                                     />
                                 </div>
 
-                                {/* Role */}
-                                <div>
-                                    <label className="block text-sm font-medium text-gray-700 mb-1">
-                                        Role <span className="text-red-500">*</span>
-                                    </label>
-                                    <select
-                                        name="role"
-                                        value={formData.role}
-                                        onChange={handleInputChange}
-                                        className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-transparent bg-white"
-                                        required
-                                    >
-                                        <option value="staff">Staff (Limited Access)</option>
-                                        <option value="owner">Owner (Full Access)</option>
-                                    </select>
-                                    <p className="mt-1 text-xs text-gray-500">
-                                        Staff have limited access. Owners have full access to all features.
-                                    </p>
-                                </div>
-
                                 {/* Modal Footer */}
-                                <div className="flex items-center justify-end gap-3 pt-4 border-t border-gray-200">
+                                <div className="flex items-center justify-end gap-3 pt-4 border-t border-gray-200 dark:border-gray-700">
                                     <button
                                         type="button"
                                         onClick={() => setShowModal(false)}
-                                        className="px-4 py-2 text-gray-700 hover:bg-gray-100 rounded-lg transition-colors"
+                                        className="px-4 py-2 text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg transition-colors"
                                     >
                                         Cancel
                                     </button>
@@ -439,8 +437,9 @@ function Staff() {
                         </div>
                     </div>
                 </div>
-            )}
-        </div>
+            )
+            }
+        </div >
     );
 }
 

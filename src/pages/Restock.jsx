@@ -14,14 +14,7 @@ function Restock() {
     const [filterSupplier, setFilterSupplier] = useState("");
     const [showModal, setShowModal] = useState(false);
     const [editingRecord, setEditingRecord] = useState(null);
-    const [formData, setFormData] = useState({
-        productId: "",
-        supplierId: "",
-        stockQuantity: "",
-        priceSupplier: "",
-        recordType: "RECEIVED",
-        deliveryDate: new Date().toISOString().split('T')[0]
-    });
+    const [formRows, setFormRows] = useState([]);
     const [formError, setFormError] = useState("");
     const [formLoading, setFormLoading] = useState(false);
 
@@ -138,42 +131,60 @@ function Restock() {
         fetchStockRecords();
     };
 
-    const handleInputChange = (e) => {
-        const { name, value } = e.target;
-        setFormData(prev => ({ ...prev, [name]: value }));
-    };
-
     const handleAddNew = (preselectedProductId = null) => {
         setEditingRecord(null);
-        setFormData({
+        setFormRows([{
             productId: preselectedProductId || "",
             supplierId: "",
             stockQuantity: "",
             priceSupplier: "",
             recordType: "RECEIVED",
             deliveryDate: new Date().toISOString().split('T')[0]
-        });
+        }]);
         setFormError("");
         setShowModal(true);
     };
 
     const handleEdit = (record) => {
         setEditingRecord(record);
-        setFormData({
+        setFormRows([{
             productId: record.productId,
             supplierId: record.supplierId || "",
             stockQuantity: Math.abs(record.stockQuantity),
             priceSupplier: record.priceSupplier || "",
             recordType: record.recordType || "RECEIVED",
             deliveryDate: record.deliveryDate ? record.deliveryDate.split('T')[0] : new Date().toISOString().split('T')[0]
-        });
+        }]);
         setFormError("");
         setShowModal(true);
     };
 
-    const getSelectedProduct = () => {
-        if (!formData.productId) return null;
-        return products.find(p => p.productId === parseInt(formData.productId));
+    const handleRowChange = (index, field, value) => {
+        const newRows = [...formRows];
+        newRows[index] = { ...newRows[index], [field]: value };
+        setFormRows(newRows);
+    };
+
+    const addRow = () => {
+        setFormRows([...formRows, {
+            productId: "",
+            supplierId: "",
+            stockQuantity: "",
+            priceSupplier: "",
+            recordType: "RECEIVED",
+            deliveryDate: new Date().toISOString().split('T')[0]
+        }]);
+    };
+
+    const removeRow = (index) => {
+        if (formRows.length === 1) return;
+        const newRows = formRows.filter((_, i) => i !== index);
+        setFormRows(newRows);
+    };
+
+    const getSelectedProduct = (productId) => {
+        if (!productId) return null;
+        return products.find(p => p.productId === parseInt(productId));
     };
 
     const handleSubmit = async (e) => {
@@ -181,61 +192,87 @@ function Restock() {
         setFormError("");
         setFormLoading(true);
 
-        if (!formData.productId || !formData.stockQuantity) {
-            setFormError("Product and quantity are required");
-            setFormLoading(false);
-            return;
-        }
+        // Validate all rows
+        for (let i = 0; i < formRows.length; i++) {
+            const row = formRows[i];
+            if (!row.productId || !row.stockQuantity) {
+                setFormError(`Row ${i + 1}: Product and quantity are required`);
+                setFormLoading(false);
+                return;
+            }
 
-        const selectedProduct = getSelectedProduct();
-        let availableStock = selectedProduct ? selectedProduct.currentStock : 0;
+            const selectedProduct = getSelectedProduct(row.productId);
+            // Stock availability check logic for withdrawals
+            if (row.recordType === 'WITHDRAWN' || row.recordType === 'OUT') {
+                let availableStock = selectedProduct ? selectedProduct.currentStock : 0;
 
-        // When editing, add back the original record's effect to get the true available stock
-        if (editingRecord) {
-            const originalType = editingRecord.recordType.toUpperCase();
-            const originalQty = Math.abs(editingRecord.stockQuantity);
-            if (originalType === 'RECEIVED' || originalType === 'IN' || originalType === 'RESTOCK') {
-                availableStock -= originalQty;
-            } else if (originalType === 'WITHDRAWN' || originalType === 'OUT') {
-                availableStock += originalQty;
+                // If editing, adjust available stock
+                if (editingRecord) {
+                    const originalType = editingRecord.recordType.toUpperCase();
+                    const originalQty = Math.abs(editingRecord.stockQuantity);
+                    if (originalType === 'RECEIVED' || originalType === 'IN' || originalType === 'RESTOCK') {
+                        availableStock -= originalQty;
+                    } else if (originalType === 'WITHDRAWN' || originalType === 'OUT') {
+                        availableStock += originalQty;
+                    }
+                }
+
+                if (parseInt(row.stockQuantity) > availableStock) {
+                    setFormError(`Row ${i + 1}: Insufficient stock. Max withdraw: ${availableStock} for "${selectedProduct.productName}".`);
+                    setFormLoading(false);
+                    return;
+                }
             }
         }
 
-        const quantityToCheck = parseInt(formData.stockQuantity);
-        const isSubtracting = formData.recordType === 'WITHDRAWN' || formData.recordType === 'OUT';
-
-        if (isSubtracting && quantityToCheck > availableStock) {
-            setFormError(`Insufficient stock. You can only withdraw up to ${availableStock} units for "${selectedProduct.productName}".`);
-            setFormLoading(false);
-            return;
-        }
-
         try {
-            const url = editingRecord
-                ? `${API_URL}/api/stock-records/${editingRecord.recordId}`
-                : `${API_URL}/api/stock-records`;
+            if (editingRecord) {
+                // Edit Single Record
+                const row = formRows[0];
+                const response = await fetch(`${API_URL}/api/stock-records/${editingRecord.recordId}`, {
+                    method: "PUT",
+                    headers: {
+                        "Content-Type": "application/json",
+                        "Authorization": `Bearer ${token}`
+                    },
+                    body: JSON.stringify({
+                        productId: parseInt(row.productId),
+                        supplierId: row.supplierId ? parseInt(row.supplierId) : null,
+                        stockQuantity: parseInt(row.stockQuantity),
+                        priceSupplier: row.priceSupplier ? parseFloat(row.priceSupplier) : null,
+                        recordType: row.recordType,
+                        deliveryDate: row.deliveryDate ? `${row.deliveryDate}T00:00:00` : null
+                    })
+                });
 
-            const finalQuantity = parseInt(formData.stockQuantity);
+                if (!response.ok) {
+                    const errorData = await response.json();
+                    throw new Error(errorData.message || "Failed to update record");
+                }
+            } else {
+                // Batch Create
+                const requests = formRows.map(row => ({
+                    productId: parseInt(row.productId),
+                    supplierId: row.supplierId ? parseInt(row.supplierId) : null,
+                    stockQuantity: parseInt(row.stockQuantity),
+                    priceSupplier: row.priceSupplier ? parseFloat(row.priceSupplier) : null,
+                    recordType: row.recordType,
+                    deliveryDate: row.deliveryDate ? `${row.deliveryDate}T00:00:00` : null
+                }));
 
-            const response = await fetch(url, {
-                method: editingRecord ? "PUT" : "POST",
-                headers: {
-                    "Content-Type": "application/json",
-                    "Authorization": `Bearer ${token}`
-                },
-                body: JSON.stringify({
-                    productId: parseInt(formData.productId),
-                    supplierId: formData.supplierId ? parseInt(formData.supplierId) : null,
-                    stockQuantity: finalQuantity,
-                    priceSupplier: formData.priceSupplier ? parseFloat(formData.priceSupplier) : null,
-                    recordType: formData.recordType,
-                    deliveryDate: formData.deliveryDate ? `${formData.deliveryDate}T00:00:00` : null
-                })
-            });
+                const response = await fetch(`${API_URL}/api/stock-records/batch`, {
+                    method: "POST",
+                    headers: {
+                        "Content-Type": "application/json",
+                        "Authorization": `Bearer ${token}`
+                    },
+                    body: JSON.stringify(requests)
+                });
 
-            if (!response.ok) {
-                const errorData = await response.json();
-                throw new Error(errorData.message || "Failed to save stock record");
+                if (!response.ok) {
+                    const errorData = await response.json();
+                    throw new Error(errorData.message || "Failed to save records");
+                }
             }
 
             setShowModal(false);
@@ -292,39 +329,39 @@ function Restock() {
     };
 
     return (
-        <div className="p-6">
+        <div className="p-6 bg-gray-50 dark:bg-gray-900 min-h-screen">
             {/* Page Header */}
             <div className="mb-6">
-                <h1 className="text-2xl font-bold text-gray-900">Restock</h1>
-                <p className="text-gray-500 text-sm mt-1">Manage warehouse inventory and stock records</p>
-                <p className="text-blue-600 text-xs mt-1">Note: Stock records update warehouse inventory. Use Products page to refill display stock.</p>
+                <h1 className="text-2xl font-bold text-gray-900 dark:text-white">Restock</h1>
+                <p className="text-gray-500 dark:text-gray-400 text-sm mt-1">Manage warehouse inventory and stock records</p>
+                <p className="text-blue-600 dark:text-blue-400 text-xs mt-1">Note: Stock records update warehouse inventory. Use Products page to refill display stock.</p>
             </div>
 
             {/* Low Stock Alert */}
             {lowStockProducts.length > 0 && (
-                <div className="bg-yellow-50 border border-yellow-200 rounded-xl p-4 mb-6">
+                <div className="bg-yellow-50 dark:bg-yellow-900/20 border border-yellow-200 dark:border-yellow-700 rounded-xl p-4 mb-6">
                     <div className="flex items-start gap-3">
-                        <div className="p-2 bg-yellow-100 rounded-lg">
-                            <svg className="w-5 h-5 text-yellow-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <div className="p-2 bg-yellow-100 dark:bg-yellow-800 rounded-lg">
+                            <svg className="w-5 h-5 text-yellow-600 dark:text-yellow-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
                             </svg>
                         </div>
                         <div className="flex-1">
-                            <h3 className="font-semibold text-yellow-800">Low Stock Alert</h3>
-                            <p className="text-sm text-yellow-700 mt-1">{lowStockProducts.length} product(s) need restocking</p>
+                            <h3 className="font-semibold text-yellow-800 dark:text-yellow-300">Low Stock Alert</h3>
+                            <p className="text-sm text-yellow-700 dark:text-yellow-400 mt-1">{lowStockProducts.length} product(s) need restocking</p>
                             <div className="flex flex-wrap gap-2 mt-3">
                                 {lowStockProducts.slice(0, 5).map(product => (
                                     <button
                                         key={product.productId}
                                         onClick={() => handleAddNew(product.productId)}
-                                        className="inline-flex items-center gap-1 px-3 py-1 bg-white border border-yellow-300 rounded-full text-sm text-yellow-800 hover:bg-yellow-100 transition-colors"
+                                        className="inline-flex items-center gap-1 px-3 py-1 bg-white dark:bg-gray-800 border border-yellow-300 dark:border-yellow-600 rounded-full text-sm text-yellow-800 dark:text-yellow-300 hover:bg-yellow-100 dark:hover:bg-yellow-900/40 transition-colors"
                                     >
                                         <span>{product.productName}</span>
-                                        <span className="text-xs text-yellow-600">({product.currentStock}/{product.reorderLevel})</span>
+                                        <span className="text-xs text-yellow-600 dark:text-yellow-400">({product.currentStock}/{product.reorderLevel})</span>
                                     </button>
                                 ))}
                                 {lowStockProducts.length > 5 && (
-                                    <span className="text-sm text-yellow-600 self-center">+{lowStockProducts.length - 5} more</span>
+                                    <span className="text-sm text-yellow-600 dark:text-yellow-400 self-center">+{lowStockProducts.length - 5} more</span>
                                 )}
                             </div>
                         </div>
@@ -334,53 +371,53 @@ function Restock() {
 
             {/* Summary Cards */}
             <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
-                <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-4">
+                <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 p-4">
                     <div className="flex items-center justify-between">
                         <div>
-                            <p className="text-sm text-gray-500">Total Records</p>
-                            <p className="text-2xl font-bold text-gray-900">{stockRecords.length}</p>
+                            <p className="text-sm text-gray-500 dark:text-gray-400">Total Records</p>
+                            <p className="text-2xl font-bold text-gray-900 dark:text-white">{stockRecords.length}</p>
                         </div>
-                        <div className="p-3 bg-blue-100 rounded-lg">
-                            <svg className="w-6 h-6 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <div className="p-3 bg-blue-100 dark:bg-blue-900/30 rounded-lg">
+                            <svg className="w-6 h-6 text-blue-600 dark:text-blue-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" />
                             </svg>
                         </div>
                     </div>
                 </div>
-                <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-4">
+                <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 p-4">
                     <div className="flex items-center justify-between">
                         <div>
-                            <p className="text-sm text-gray-500">Stock Received</p>
-                            <p className="text-2xl font-bold text-green-600">{stockRecords.filter(r => r.recordType === 'RECEIVED' || r.recordType === 'IN').length}</p>
+                            <p className="text-sm text-gray-500 dark:text-gray-400">Stock Received</p>
+                            <p className="text-2xl font-bold text-green-600 dark:text-green-400">{stockRecords.filter(r => r.recordType === 'RECEIVED' || r.recordType === 'IN').length}</p>
                         </div>
-                        <div className="p-3 bg-green-100 rounded-lg">
-                            <svg className="w-6 h-6 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <div className="p-3 bg-green-100 dark:bg-green-900/30 rounded-lg">
+                            <svg className="w-6 h-6 text-green-600 dark:text-green-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 11l5-5m0 0l5 5m-5-5v12" />
                             </svg>
                         </div>
                     </div>
                 </div>
-                <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-4">
+                <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 p-4">
                     <div className="flex items-center justify-between">
                         <div>
-                            <p className="text-sm text-gray-500">Low Stock Items</p>
-                            <p className="text-2xl font-bold text-yellow-600">{lowStockProducts.length}</p>
+                            <p className="text-sm text-gray-500 dark:text-gray-400">Low Stock Items</p>
+                            <p className="text-2xl font-bold text-yellow-600 dark:text-yellow-400">{lowStockProducts.length}</p>
                         </div>
-                        <div className="p-3 bg-yellow-100 rounded-lg">
-                            <svg className="w-6 h-6 text-yellow-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <div className="p-3 bg-yellow-100 dark:bg-yellow-900/30 rounded-lg">
+                            <svg className="w-6 h-6 text-yellow-600 dark:text-yellow-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
                             </svg>
                         </div>
                     </div>
                 </div>
-                <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-4">
+                <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 p-4">
                     <div className="flex items-center justify-between">
                         <div>
-                            <p className="text-sm text-gray-500">Total Products</p>
-                            <p className="text-2xl font-bold text-purple-600">{products.length}</p>
+                            <p className="text-sm text-gray-500 dark:text-gray-400">Total Products</p>
+                            <p className="text-2xl font-bold text-purple-600 dark:text-purple-400">{products.length}</p>
                         </div>
-                        <div className="p-3 bg-purple-100 rounded-lg">
-                            <svg className="w-6 h-6 text-purple-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <div className="p-3 bg-purple-100 dark:bg-purple-900/30 rounded-lg">
+                            <svg className="w-6 h-6 text-purple-600 dark:text-purple-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4" />
                             </svg>
                         </div>
@@ -389,14 +426,14 @@ function Restock() {
             </div>
 
             {/* Action Bar */}
-            <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-4 mb-6">
+            <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 p-4 mb-6">
                 <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
                     <div className="flex flex-wrap items-center gap-3">
                         {/* Product Filter */}
                         <select
                             value={filterProduct}
                             onChange={(e) => handleProductFilter(e.target.value)}
-                            className="px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-transparent bg-white"
+                            className="px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-transparent bg-white dark:bg-gray-700 dark:text-white"
                         >
                             <option value="">All Products</option>
                             {products.map(product => (
@@ -410,7 +447,7 @@ function Restock() {
                         <select
                             value={filterSupplier}
                             onChange={(e) => handleSupplierFilter(e.target.value)}
-                            className="px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-transparent bg-white"
+                            className="px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-transparent bg-white dark:bg-gray-700 dark:text-white"
                         >
                             <option value="">All Suppliers</option>
                             {suppliers.map(supplier => (
@@ -423,7 +460,7 @@ function Restock() {
                         {(filterProduct || filterSupplier) && (
                             <button
                                 onClick={clearFilters}
-                                className="px-3 py-2 text-gray-500 hover:text-gray-700 hover:bg-gray-100 rounded-lg transition-colors text-sm"
+                                className="px-3 py-2 text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg transition-colors text-sm"
                             >
                                 Clear
                             </button>
@@ -445,54 +482,54 @@ function Restock() {
 
             {/* Error Message */}
             {error && (
-                <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-xl mb-6">
+                <div className="bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-700 text-red-700 dark:text-red-400 px-4 py-3 rounded-xl mb-6">
                     {error}
                 </div>
             )}
 
             {/* Stock Records Table */}
-            <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
+            <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 overflow-hidden">
                 {loading ? (
                     <div className="flex items-center justify-center py-12">
                         <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-orange-500"></div>
-                        <span className="ml-3 text-gray-500">Loading stock records...</span>
+                        <span className="ml-3 text-gray-500 dark:text-gray-400">Loading stock records...</span>
                     </div>
                 ) : stockRecords.length === 0 ? (
                     <div className="text-center py-12">
-                        <svg className="w-16 h-16 mx-auto text-gray-300 mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <svg className="w-16 h-16 mx-auto text-gray-300 dark:text-gray-600 mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4" />
                         </svg>
-                        <p className="text-gray-500">No stock records found</p>
-                        <button onClick={() => handleAddNew()} className="mt-4 text-orange-500 hover:text-orange-600 font-medium">
+                        <p className="text-gray-500 dark:text-gray-400">No stock records found</p>
+                        <button onClick={() => handleAddNew()} className="mt-4 text-orange-500 hover:text-orange-600 dark:text-orange-400 dark:hover:text-orange-300 font-medium">
                             Add your first stock record
                         </button>
                     </div>
                 ) : (
                     <div className="overflow-x-auto">
                         <table className="w-full">
-                            <thead className="bg-gray-50 border-b border-gray-200">
+                            <thead className="bg-gray-50 dark:bg-gray-700 border-b border-gray-200 dark:border-gray-600">
                                 <tr>
-                                    <th className="text-left px-6 py-4 text-xs font-semibold text-gray-500 uppercase tracking-wider">Date</th>
-                                    <th className="text-left px-6 py-4 text-xs font-semibold text-gray-500 uppercase tracking-wider">Product</th>
-                                    <th className="text-left px-6 py-4 text-xs font-semibold text-gray-500 uppercase tracking-wider">Supplier</th>
-                                    <th className="text-center px-6 py-4 text-xs font-semibold text-gray-500 uppercase tracking-wider">Type</th>
-                                    <th className="text-center px-6 py-4 text-xs font-semibold text-gray-500 uppercase tracking-wider">Quantity</th>
-                                    <th className="text-right px-6 py-4 text-xs font-semibold text-gray-500 uppercase tracking-wider">Unit Cost</th>
-                                    <th className="text-right px-6 py-4 text-xs font-semibold text-gray-500 uppercase tracking-wider">Total Cost</th>
-                                    <th className="text-center px-6 py-4 text-xs font-semibold text-gray-500 uppercase tracking-wider">Actions</th>
+                                    <th className="text-left px-6 py-4 text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider">Date</th>
+                                    <th className="text-left px-6 py-4 text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider">Product</th>
+                                    <th className="text-left px-6 py-4 text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider">Supplier</th>
+                                    <th className="text-center px-6 py-4 text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider">Type</th>
+                                    <th className="text-center px-6 py-4 text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider">Quantity</th>
+                                    <th className="text-right px-6 py-4 text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider">Unit Cost</th>
+                                    <th className="text-right px-6 py-4 text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider">Total Cost</th>
+                                    <th className="text-center px-6 py-4 text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider">Actions</th>
                                 </tr>
                             </thead>
-                            <tbody className="divide-y divide-gray-100">
+                            <tbody className="divide-y divide-gray-100 dark:divide-gray-700">
                                 {stockRecords.map((record) => (
-                                    <tr key={record.recordId} className="hover:bg-gray-50 transition-colors">
+                                    <tr key={record.recordId} className="hover:bg-gray-50 dark:hover:bg-gray-700/50 transition-colors">
                                         <td className="px-6 py-4">
-                                            <div className="text-sm text-gray-900">{formatDate(record.deliveryDate)}</div>
+                                            <div className="text-sm text-gray-900 dark:text-white">{formatDate(record.deliveryDate)}</div>
                                         </td>
                                         <td className="px-6 py-4">
-                                            <div className="font-medium text-gray-900">{record.productName}</div>
+                                            <div className="font-medium text-gray-900 dark:text-white">{record.productName}</div>
                                         </td>
                                         <td className="px-6 py-4">
-                                            <div className="text-sm text-gray-600">{record.supplierName || "-"}</div>
+                                            <div className="text-sm text-gray-600 dark:text-gray-400">{record.supplierName || "-"}</div>
                                         </td>
                                         <td className="px-6 py-4 text-center">
                                             <span className={`px-2 py-1 text-xs font-medium rounded-full ${getRecordTypeBadge(record.recordType)}`}>
@@ -500,27 +537,26 @@ function Restock() {
                                             </span>
                                         </td>
                                         <td className="px-6 py-4 text-center">
-                                            <span className={`font-semibold ${
-                                                record.recordType === 'RECEIVED' || record.recordType === 'IN' ? 'text-green-600' :
-                                                record.recordType === 'WITHDRAWN' || record.recordType === 'OUT' ? 'text-red-600' :
-                                                'text-gray-900'
-                                            }`}>
+                                            <span className={`font-semibold ${record.recordType === 'RECEIVED' || record.recordType === 'IN' ? 'text-green-600 dark:text-green-400' :
+                                                record.recordType === 'WITHDRAWN' || record.recordType === 'OUT' ? 'text-red-600 dark:text-red-400' :
+                                                    'text-gray-900 dark:text-white'
+                                                }`}>
                                                 {(record.recordType === 'RECEIVED' || record.recordType === 'IN') ? '+' : ''}
                                                 {(record.recordType === 'WITHDRAWN' || record.recordType === 'OUT') ? '-' : ''}
                                                 {Math.abs(record.stockQuantity)}
                                             </span>
                                         </td>
-                                        <td className="px-6 py-4 text-right text-gray-600">
+                                        <td className="px-6 py-4 text-right text-gray-600 dark:text-gray-400">
                                             {formatCurrency(record.priceSupplier)}
                                         </td>
-                                        <td className="px-6 py-4 text-right font-medium text-gray-900">
+                                        <td className="px-6 py-4 text-right font-medium text-gray-900 dark:text-white">
                                             {record.priceSupplier ? formatCurrency(record.priceSupplier * Math.abs(record.stockQuantity)) : "-"}
                                         </td>
                                         <td className="px-6 py-4">
                                             <div className="flex items-center justify-center gap-2">
                                                 <button
                                                     onClick={() => handleEdit(record)}
-                                                    className="p-2 text-gray-500 hover:text-orange-500 hover:bg-orange-50 rounded-lg transition-colors"
+                                                    className="p-2 text-gray-500 dark:text-gray-400 hover:text-orange-500 dark:hover:text-orange-400 hover:bg-orange-50 dark:hover:bg-orange-900/20 rounded-lg transition-colors"
                                                     title="Edit"
                                                 >
                                                     <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -529,7 +565,7 @@ function Restock() {
                                                 </button>
                                                 <button
                                                     onClick={() => handleDelete(record.recordId)}
-                                                    className="p-2 text-gray-500 hover:text-red-500 hover:bg-red-50 rounded-lg transition-colors"
+                                                    className="p-2 text-gray-500 dark:text-gray-400 hover:text-red-500 dark:hover:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-lg transition-colors"
                                                     title="Delete"
                                                 >
                                                     <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -548,7 +584,7 @@ function Restock() {
 
             {/* Record Count */}
             {!loading && stockRecords.length > 0 && (
-                <div className="mt-4 text-sm text-gray-500">
+                <div className="mt-4 text-sm text-gray-500 dark:text-gray-400">
                     Showing {stockRecords.length} stock records
                 </div>
             )}
@@ -556,15 +592,20 @@ function Restock() {
             {/* Add/Edit Modal */}
             {showModal && (
                 <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
-                    <div className="bg-white rounded-2xl shadow-xl w-full max-w-lg max-h-[90vh] overflow-y-auto">
+                    <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-xl w-full max-w-4xl max-h-[90vh] overflow-y-auto">
                         {/* Modal Header */}
-                        <div className="flex items-center justify-between p-6 border-b border-gray-200">
-                            <h2 className="text-xl font-bold text-gray-900">
-                                {editingRecord ? "Edit Stock Record" : "Add Stock Record"}
-                            </h2>
+                        <div className="flex items-center justify-between p-6 border-b border-gray-200 dark:border-gray-700">
+                            <div>
+                                <h2 className="text-xl font-bold text-gray-900 dark:text-white">
+                                    {editingRecord ? "Edit Stock Record" : "Batch Restock"}
+                                </h2>
+                                {!editingRecord && (
+                                    <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">Add multiple items at once</p>
+                                )}
+                            </div>
                             <button
                                 onClick={() => setShowModal(false)}
-                                className="p-2 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-lg transition-colors"
+                                className="p-2 text-gray-400 dark:text-gray-500 hover:text-gray-600 dark:hover:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg transition-colors"
                             >
                                 <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
@@ -575,159 +616,148 @@ function Restock() {
                         {/* Modal Body */}
                         <form onSubmit={handleSubmit} className="p-6 space-y-4">
                             {formError && (
-                                <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-xl text-sm">
+                                <div className="bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-700 text-red-700 dark:text-red-400 px-4 py-3 rounded-xl text-sm mb-4">
                                     {formError}
                                 </div>
                             )}
 
-                            {/* Product */}
-                            <div>
-                                <label className="block text-sm font-medium text-gray-700 mb-1">
-                                    Product <span className="text-red-500">*</span>
-                                </label>
-                                <select
-                                    name="productId"
-                                    value={formData.productId}
-                                    onChange={handleInputChange}
-                                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-transparent bg-white"
-                                >
-                                    <option value="">Select a product</option>
-                                    {products.map(product => (
-                                        <option key={product.productId} value={product.productId}>
-                                            {product.productName} (Stock: {product.currentStock})
-                                        </option>
-                                    ))}
-                                </select>
-                            </div>
+                            <div className="space-y-4">
+                                {formRows.map((row, index) => (
+                                    <div key={index} className="p-4 border border-gray-200 dark:border-gray-600 rounded-xl bg-gray-50 dark:bg-gray-700/50 relative group">
+                                        {/* Remove Row Button (Only for batch mode and > 1 row) */}
+                                        {!editingRecord && formRows.length > 1 && (
+                                            <button
+                                                type="button"
+                                                onClick={() => removeRow(index)}
+                                                className="absolute -top-2 -right-2 bg-red-100 dark:bg-red-900/50 text-red-500 dark:text-red-400 p-1 rounded-full shadow-sm hover:bg-red-200 dark:hover:bg-red-900 opacity-0 group-hover:opacity-100 transition-all"
+                                                title="Remove row"
+                                            >
+                                                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                                                </svg>
+                                            </button>
+                                        )}
 
-                            {/* Supplier */}
-                            <div>
-                                <label className="block text-sm font-medium text-gray-700 mb-1">Supplier</label>
-                                <select
-                                    name="supplierId"
-                                    value={formData.supplierId}
-                                    onChange={handleInputChange}
-                                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-transparent bg-white"
-                                >
-                                    <option value="">Select a supplier (optional)</option>
-                                    {suppliers.map(supplier => (
-                                        <option key={supplier.supplierId} value={supplier.supplierId}>
-                                            {supplier.supplierName}
-                                        </option>
-                                    ))}
-                                </select>
-                            </div>
+                                        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+                                            {/* Product Selection */}
+                                            <div className="lg:col-span-2">
+                                                <label className="block text-xs font-medium text-gray-500 dark:text-gray-400 mb-1">Product <span className="text-red-500">*</span></label>
+                                                <select
+                                                    value={row.productId}
+                                                    onChange={(e) => handleRowChange(index, 'productId', e.target.value)}
+                                                    className="w-full px-3 py-2 text-sm border border-gray-300 dark:border-gray-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500 bg-white dark:bg-gray-700 dark:text-white"
+                                                >
+                                                    <option value="">Select Product...</option>
+                                                    {products.map(product => (
+                                                        <option key={product.productId} value={product.productId}>
+                                                            {product.productName} (Stock: {product.currentStock})
+                                                        </option>
+                                                    ))}
+                                                </select>
+                                            </div>
 
-                            {/* Record Type */}
-                            <div>
-                                <label className="block text-sm font-medium text-gray-700 mb-1">Record Type</label>
-                                <div className="grid grid-cols-2 gap-3">
-                                    <button
-                                        type="button"
-                                        onClick={() => setFormData(prev => ({ ...prev, recordType: 'RECEIVED' }))}
-                                        className={`px-4 py-3 text-sm rounded-lg border transition-all flex items-center justify-center gap-2 ${
-                                            formData.recordType === 'RECEIVED'
-                                                ? 'bg-green-500 text-white border-green-500'
-                                                : 'bg-white text-gray-700 border-gray-300 hover:border-green-300'
-                                        }`}
-                                    >
-                                        <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 11l5-5m0 0l5 5m-5-5v12" />
-                                        </svg>
-                                        RECEIVED
-                                    </button>
-                                    <button
-                                        type="button"
-                                        onClick={() => setFormData(prev => ({ ...prev, recordType: 'WITHDRAWN' }))}
-                                        className={`px-4 py-3 text-sm rounded-lg border transition-all flex items-center justify-center gap-2 ${
-                                            formData.recordType === 'WITHDRAWN'
-                                                ? 'bg-red-500 text-white border-red-500'
-                                                : 'bg-white text-gray-700 border-gray-300 hover:border-red-300'
-                                        }`}
-                                    >
-                                        <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 13l-5 5m0 0l-5-5m5 5V6" />
-                                        </svg>
-                                        WITHDRAWN
-                                    </button>
-                                </div>
-                            </div>
+                                            {/* Quantity */}
+                                            <div>
+                                                <label className="block text-xs font-medium text-gray-500 dark:text-gray-400 mb-1">Quantity <span className="text-red-500">*</span></label>
+                                                <input
+                                                    type="number"
+                                                    value={row.stockQuantity}
+                                                    onChange={(e) => handleRowChange(index, 'stockQuantity', e.target.value)}
+                                                    min="1"
+                                                    className="w-full px-3 py-2 text-sm border border-gray-300 dark:border-gray-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500 bg-white dark:bg-gray-700 dark:text-white"
+                                                    placeholder="0"
+                                                />
+                                            </div>
 
-                            {/* Quantity and Price Row */}
-                            <div className="grid grid-cols-2 gap-4">
-                                <div>
-                                    <label className="block text-sm font-medium text-gray-700 mb-1">
-                                        Quantity <span className="text-red-500">*</span>
-                                    </label>
-                                    <input
-                                        type="number"
-                                        name="stockQuantity"
-                                        value={formData.stockQuantity}
-                                        onChange={handleInputChange}
-                                        min="1"
-                                        className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-transparent"
-                                        placeholder="0"
-                                    />
-                                </div>
-                                <div>
-                                    <label className="block text-sm font-medium text-gray-700 mb-1">Unit Cost</label>
-                                    <div className="relative">
-                                        <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500">₱</span>
-                                        <input
-                                            type="number"
-                                            name="priceSupplier"
-                                            value={formData.priceSupplier}
-                                            onChange={handleInputChange}
-                                            step="0.01"
-                                            min="0"
-                                            className="w-full pl-8 pr-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-transparent"
-                                            placeholder="0.00"
-                                        />
+                                            {/* Unit Cost */}
+                                            <div>
+                                                <label className="block text-xs font-medium text-gray-500 dark:text-gray-400 mb-1">Unit Cost</label>
+                                                <div className="relative">
+                                                    <span className="absolute left-2 top-1/2 -translate-y-1/2 text-gray-500 dark:text-gray-400 text-xs">₱</span>
+                                                    <input
+                                                        type="number"
+                                                        value={row.priceSupplier}
+                                                        onChange={(e) => handleRowChange(index, 'priceSupplier', e.target.value)}
+                                                        step="0.01"
+                                                        className="w-full pl-6 pr-3 py-2 text-sm border border-gray-300 dark:border-gray-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500 bg-white dark:bg-gray-700 dark:text-white"
+                                                        placeholder="0.00"
+                                                    />
+                                                </div>
+                                            </div>
+
+                                            {/* Row 2: Supplier, Type, Date */}
+                                            <div className="lg:col-span-2">
+                                                <label className="block text-xs font-medium text-gray-500 dark:text-gray-400 mb-1">Supplier</label>
+                                                <select
+                                                    value={row.supplierId}
+                                                    onChange={(e) => handleRowChange(index, 'supplierId', e.target.value)}
+                                                    className="w-full px-3 py-2 text-sm border border-gray-300 dark:border-gray-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500 bg-white dark:bg-gray-700 dark:text-white"
+                                                >
+                                                    <option value="">Select Supplier (Optional)</option>
+                                                    {suppliers.map(supplier => (
+                                                        <option key={supplier.supplierId} value={supplier.supplierId}>
+                                                            {supplier.supplierName}
+                                                        </option>
+                                                    ))}
+                                                </select>
+                                            </div>
+
+                                            <div>
+                                                <label className="block text-xs font-medium text-gray-500 dark:text-gray-400 mb-1">Type</label>
+                                                <select
+                                                    value={row.recordType}
+                                                    onChange={(e) => handleRowChange(index, 'recordType', e.target.value)}
+                                                    className={`w-full px-3 py-2 text-sm border rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500 font-medium ${row.recordType === 'RECEIVED' ? 'text-green-600 dark:text-green-400 border-green-200 dark:border-green-700 bg-green-50 dark:bg-green-900/30' : 'text-red-600 dark:text-red-400 border-red-200 dark:border-red-700 bg-red-50 dark:bg-red-900/30'
+                                                        }`}
+                                                >
+                                                    <option value="RECEIVED">RECEIVED (+)</option>
+                                                    <option value="WITHDRAWN">WITHDRAWN (-)</option>
+                                                </select>
+                                            </div>
+
+                                            <div>
+                                                <label className="block text-xs font-medium text-gray-500 dark:text-gray-400 mb-1">Date</label>
+                                                <input
+                                                    type="date"
+                                                    value={row.deliveryDate}
+                                                    onChange={(e) => handleRowChange(index, 'deliveryDate', e.target.value)}
+                                                    className="w-full px-3 py-2 text-sm border border-gray-300 dark:border-gray-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500 bg-white dark:bg-gray-700 dark:text-white"
+                                                />
+                                            </div>
+                                        </div>
                                     </div>
-                                </div>
+                                ))}
                             </div>
 
-                            {/* Total Cost Display */}
-                            {formData.stockQuantity && formData.priceSupplier && (
-                                <div className="bg-gray-50 rounded-lg p-3 flex justify-between items-center">
-                                    <span className="text-sm text-gray-600">Total Cost:</span>
-                                    <span className="font-bold text-gray-900">
-                                        {formatCurrency(parseFloat(formData.stockQuantity) * parseFloat(formData.priceSupplier))}
-                                    </span>
-                                </div>
+                            {/* Add Row Button */}
+                            {!editingRecord && (
+                                <button
+                                    type="button"
+                                    onClick={addRow}
+                                    className="w-full py-3 border-2 border-dashed border-gray-300 dark:border-gray-600 rounded-xl text-gray-500 dark:text-gray-400 hover:border-orange-500 dark:hover:border-orange-400 hover:text-orange-500 dark:hover:text-orange-400 hover:bg-orange-50 dark:hover:bg-orange-900/20 transition-all flex items-center justify-center gap-2 font-medium"
+                                >
+                                    <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
+                                    </svg>
+                                    Add Another Item
+                                </button>
                             )}
 
-                            {/* Date Field */}
-                            <div>
-                                <label className="block text-sm font-medium text-gray-700 mb-1">
-                                    {formData.recordType === 'RECEIVED' || formData.recordType === 'IN' ? 'Delivery Date' :
-                                     formData.recordType === 'WITHDRAWN' || formData.recordType === 'OUT' ? 'Withdrawal Date' :
-                                     'Transaction Date'}
-                                </label>
-                                <input
-                                    type="date"
-                                    name="deliveryDate"
-                                    value={formData.deliveryDate}
-                                    onChange={handleInputChange}
-                                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-transparent"
-                                />
-                            </div>
-
                             {/* Modal Footer */}
-                            <div className="flex items-center justify-end gap-3 pt-4 border-t border-gray-200">
+                            <div className="flex items-center justify-end gap-3 pt-4 border-t border-gray-200 dark:border-gray-700">
                                 <button
                                     type="button"
                                     onClick={() => setShowModal(false)}
-                                    className="px-4 py-2 text-gray-700 hover:bg-gray-100 rounded-lg transition-colors"
+                                    className="px-4 py-2 text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg transition-colors"
                                 >
                                     Cancel
                                 </button>
                                 <button
                                     type="submit"
                                     disabled={formLoading}
-                                    className="px-6 py-2 bg-gradient-to-r from-orange-400 to-orange-500 text-white rounded-lg hover:from-orange-500 hover:to-orange-600 transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+                                    className="px-6 py-2 bg-gradient-to-r from-orange-400 to-orange-500 text-white rounded-lg hover:from-orange-500 hover:to-orange-600 transition-all disabled:opacity-50 disabled:cursor-not-allowed shadow-md"
                                 >
-                                    {formLoading ? "Saving..." : (editingRecord ? "Update" : "Add Record")}
+                                    {formLoading ? "Saving..." : (editingRecord ? "Update Record" : `Save ${formRows.length} Records`)}
                                 </button>
                             </div>
                         </form>

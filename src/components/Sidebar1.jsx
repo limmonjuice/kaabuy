@@ -1,30 +1,33 @@
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
 import { useRole } from "../hooks/useRole";
-import { useState } from "react";
+import { useTheme } from "../context/ThemeContext";
 import logo from "../assets/primary_logo.jpg";
+import darkLogo from "../assets/Dark_Mode_Logo_Variant.jpg";
 
 function Sidebar({ isOpen, onToggle }) {
     const location = useLocation();
     const { user, logout } = useAuth();
     const { isOwner } = useRole();
     const navigate = useNavigate();
-    const [darkMode, setDarkMode] = useState(false);
+    const { theme, setTheme } = useTheme();
+    const isDarkMode = theme === 'dark' || (theme === 'system' && window.matchMedia('(prefers-color-scheme: dark)').matches);
 
     const handleLogout = () => {
-        logout();
-        navigate("/login");
+        navigate("/");
+        setTimeout(() => logout(), 0);
     };
 
     const mainMenuItems = [
+
         {
             icon: (
                 <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6" />
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2V6zM14 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2V6zM4 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2v-2zM14 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2v-2z" />
                 </svg>
             ),
             text: "Dashboard",
-            link: "/"
+            link: "/dashboard"
         },
         {
             icon: (
@@ -115,8 +118,7 @@ function Sidebar({ isOpen, onToggle }) {
                 </svg>
             ),
             text: "Settings",
-            link: "/settings",
-            ownerOnly: true
+            link: "/settings"
         },
         {
             icon: (
@@ -130,14 +132,17 @@ function Sidebar({ isOpen, onToggle }) {
     ];
 
     return (
-        <div className={`${isOpen ? 'w-64' : 'w-16'} h-screen bg-white transition-all duration-300 shadow-lg border-r border-gray-200`}>
+        <div className={`${isOpen ? 'w-64' : 'w-16'} h-screen bg-white dark:bg-gray-900 transition-all duration-300 shadow-lg border-r border-gray-200 dark:border-gray-700`}>
             {/* Hamburger/Close Button and Store Name */}
-            <div className={`p-4 border-b border-gray-100 ${isOpen ? 'px-6' : 'px-3'} flex items-center justify-between`}>
-                <div className="flex items-center space-x-3 flex-1">
+            <div className={`py-3 border-b border-gray-100 dark:border-gray-700 ${isOpen ? 'px-6' : 'px-3'} flex items-center justify-between`}>
+                <div className="flex items-center space-x-3 flex-1 min-h-12">
                     {isOpen && (
-                        <div className="overflow-hidden">
-                            <h2 className="text-lg font-bold text-gray-900 whitespace-nowrap">Kaabuy</h2>
-                            <p className="text-xs text-gray-500 whitespace-nowrap">{user?.storeName || 'Store Name'}</p>
+                        <div className="overflow-hidden flex items-center justify-center w-full">
+                            <img
+                                src={isDarkMode ? darkLogo : logo}
+                                alt="Kaabuy Logo"
+                                className="h-12 w-auto object-contain transition-all duration-300"
+                            />
                         </div>
                     )}
                 </div>
@@ -145,7 +150,7 @@ function Sidebar({ isOpen, onToggle }) {
                 {/* Hamburger/X Toggle Button */}
                 <button
                     onClick={onToggle}
-                    className={`p-2 text-gray-600 hover:text-gray-900 hover:bg-gray-100 rounded-lg transition-all duration-200 ${!isOpen ? 'mx-auto' : ''}`}
+                    className={`p-2 text-gray-600 dark:text-gray-300 hover:text-gray-900 dark:hover:text-white hover:bg-gray-100 dark:hover:bg-gray-800 rounded-lg transition-all duration-200 ${!isOpen ? 'mx-auto' : ''}`}
                     aria-label={isOpen ? "Close sidebar" : "Open sidebar"}
                 >
                     <div className="relative w-6 h-6">
@@ -169,7 +174,7 @@ function Sidebar({ isOpen, onToggle }) {
             {/* Navigation */}
             <nav className="py-4 overflow-y-auto h-[calc(100vh-80px)]">
                 {/* Main Menu Section */}
-                <div className="mb-6">
+                <div className="mb-8 space-y-2">
                     {isOpen && (
                         <h3 className="px-6 mb-3 text-xs font-semibold text-gray-400 uppercase tracking-wider">
                             Main Menu
@@ -179,11 +184,10 @@ function Sidebar({ isOpen, onToggle }) {
                         <Link
                             key={index}
                             to={item.link}
-                            className={`flex items-center ${isOpen ? 'px-6 mx-4' : 'px-3 mx-2 justify-center'} py-3 rounded-lg transition-all duration-300 ease-in-out transform ${
-                                location.pathname === item.link
-                                    ? 'bg-gradient-to-r from-orange-400 to-orange-500 text-white shadow-md scale-105'
-                                    : 'text-gray-600 hover:bg-gray-50 hover:text-gray-900 hover:scale-102'
-                            }`}
+                            className={`flex items-center ${isOpen ? 'px-6 mx-4' : 'px-3 mx-2 justify-center'} py-3 rounded-lg transition-all duration-300 ease-in-out transform ${location.pathname === item.link
+                                ? 'bg-gradient-to-r from-orange-400 to-orange-500 text-white shadow-md scale-105'
+                                : 'text-gray-600 hover:bg-gray-50 hover:text-gray-900 hover:scale-102'
+                                }`}
                             title={!isOpen ? item.text : ''}
                         >
                             <span className={`${isOpen ? 'mr-3' : ''}`}>{item.icon}</span>
@@ -193,7 +197,7 @@ function Sidebar({ isOpen, onToggle }) {
                 </div>
 
                 {/* Management Section */}
-                <div className="mb-6">
+                <div className="mb-8 space-y-2">
                     {isOpen && (
                         <h3 className="px-6 mb-3 text-xs font-semibold text-gray-400 uppercase tracking-wider">
                             Management
@@ -203,11 +207,10 @@ function Sidebar({ isOpen, onToggle }) {
                         <Link
                             key={index}
                             to={item.link}
-                            className={`flex items-center ${isOpen ? 'px-6 mx-4' : 'px-3 mx-2 justify-center'} py-3 rounded-lg transition-all duration-300 ease-in-out transform ${
-                                location.pathname === item.link
-                                    ? 'bg-gradient-to-r from-orange-400 to-orange-500 text-white shadow-md scale-105'
-                                    : 'text-gray-600 hover:bg-gray-50 hover:text-gray-900 hover:scale-102'
-                            }`}
+                            className={`flex items-center ${isOpen ? 'px-6 mx-4' : 'px-3 mx-2 justify-center'} py-3 rounded-lg transition-all duration-300 ease-in-out transform ${location.pathname === item.link
+                                ? 'bg-gradient-to-r from-orange-400 to-orange-500 text-white shadow-md scale-105'
+                                : 'text-gray-600 hover:bg-gray-50 hover:text-gray-900 hover:scale-102'
+                                }`}
                             title={!isOpen ? item.text : ''}
                         >
                             <span className={`${isOpen ? 'mr-3' : ''}`}>{item.icon}</span>
@@ -217,7 +220,7 @@ function Sidebar({ isOpen, onToggle }) {
                 </div>
 
                 {/* Settings Section */}
-                <div className="mb-6">
+                <div className="mb-8 space-y-2">
                     {isOpen && (
                         <h3 className="px-6 mb-3 text-xs font-semibold text-gray-400 uppercase tracking-wider">
                             Settings
@@ -227,11 +230,10 @@ function Sidebar({ isOpen, onToggle }) {
                         <Link
                             key={index}
                             to={item.link}
-                            className={`flex items-center ${isOpen ? 'px-6 mx-4' : 'px-3 mx-2 justify-center'} py-3 rounded-lg transition-all duration-300 ease-in-out transform ${
-                                location.pathname === item.link
-                                    ? 'bg-gradient-to-r from-orange-400 to-orange-500 text-white shadow-md scale-105'
-                                    : 'text-gray-600 hover:bg-gray-50 hover:text-gray-900 hover:scale-102'
-                            }`}
+                            className={`flex items-center ${isOpen ? 'px-6 mx-4' : 'px-3 mx-2 justify-center'} py-3 rounded-lg transition-all duration-300 ease-in-out transform ${location.pathname === item.link
+                                ? 'bg-gradient-to-r from-orange-400 to-orange-500 text-white shadow-md scale-105'
+                                : 'text-gray-600 hover:bg-gray-50 hover:text-gray-900 hover:scale-102'
+                                }`}
                             title={!isOpen ? item.text : ''}
                         >
                             <span className={`${isOpen ? 'mr-3' : ''}`}>{item.icon}</span>
@@ -241,13 +243,13 @@ function Sidebar({ isOpen, onToggle }) {
 
                     {/* Dark Mode Toggle */}
                     <button
-                        onClick={() => setDarkMode(!darkMode)}
-                        className={`flex items-center ${isOpen ? 'px-6 mx-4 justify-between' : 'px-3 mx-2 justify-center'} py-3 rounded-lg transition-all duration-300 ease-in-out text-gray-600 hover:bg-gray-50 hover:text-gray-900 w-auto`}
-                        title={!isOpen ? (darkMode ? 'Dark Mode' : 'Light Mode') : ''}
+                        onClick={() => setTheme(isDarkMode ? 'light' : 'dark')}
+                        className={`flex items-center ${isOpen ? 'px-6 w-[calc(100%-2rem)] mx-auto justify-between' : 'px-3 mx-2 justify-center'} py-3 rounded-lg transition-all duration-300 ease-in-out text-gray-600 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-800 hover:text-gray-900 dark:hover:text-white`}
+                        title={!isOpen ? (isDarkMode ? 'Dark Mode' : 'Light Mode') : ''}
                     >
                         <div className={`flex items-center ${isOpen ? '' : ''}`}>
                             <span className={`${isOpen ? 'mr-3' : ''}`}>
-                                {darkMode ? (
+                                {isDarkMode ? (
                                     <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M20.354 15.354A9 9 0 018.646 3.646 9.003 9.003 0 0012 21a9.003 9.003 0 008.354-5.646z" />
                                     </svg>
@@ -257,18 +259,16 @@ function Sidebar({ isOpen, onToggle }) {
                                     </svg>
                                 )}
                             </span>
-                            {isOpen && <span className="text-sm font-medium whitespace-nowrap">{darkMode ? 'Dark Mode' : 'Light Mode'}</span>}
+                            {isOpen && <span className="text-sm font-medium whitespace-nowrap">{isDarkMode ? 'Dark Mode' : 'Light Mode'}</span>}
                         </div>
                         {isOpen && (
                             <div
-                                className={`relative inline-flex h-5 w-9 items-center rounded-full transition-colors flex-shrink-0 ${
-                                    darkMode ? 'bg-orange-500' : 'bg-gray-300'
-                                }`}
+                                className={`relative inline-flex h-5 w-9 items-center rounded-full transition-colors flex-shrink-0 ${isDarkMode ? 'bg-orange-500' : 'bg-gray-300'
+                                    }`}
                             >
                                 <span
-                                    className={`inline-block h-3 w-3 transform rounded-full bg-white transition-transform ${
-                                        darkMode ? 'translate-x-5' : 'translate-x-1'
-                                    }`}
+                                    className={`inline-block h-3 w-3 transform rounded-full bg-white transition-transform ${isDarkMode ? 'translate-x-5' : 'translate-x-1'
+                                        }`}
                                 />
                             </div>
                         )}
@@ -293,53 +293,53 @@ function Sidebar({ isOpen, onToggle }) {
     );
 }
 
-function Header({onSidebarToggle}){
+function Header({ onSidebarToggle }) {
     return (
-    <header className="bg-white shadow-sm border-b border-gray-200">
-        <div className="flex items-center justify-between px-6 py-4">
-            <button 
-                onClick={onSidebarToggle}
-                className="p-2 hover:bg-gray-100 rounded-lg transition-colors duration-200"
-                aria-label="Toggle sidebar"
-            >
-                <svg xmlns="http://www.w3.org/2000/svg" height="24px" viewBox="0 -960 960 960" width="24px" fill="#163b42">
-                    <path d="M120-240v-80h720v80H120Zm0-200v-80h720v80H120Zm0-200v-80h720v80H120Z"/>
-                </svg>
-            </button>
-            
-            <div className="flex items-center space-x-4">
-                <div className="relative">
-                    <svg className="w-5 h-5 absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+        <header className="bg-white shadow-sm border-b border-gray-200">
+            <div className="flex items-center justify-between px-6 py-4">
+                <button
+                    onClick={onSidebarToggle}
+                    className="p-2 hover:bg-gray-100 rounded-lg transition-colors duration-200"
+                    aria-label="Toggle sidebar"
+                >
+                    <svg xmlns="http://www.w3.org/2000/svg" height="24px" viewBox="0 -960 960 960" width="24px" fill="#163b42">
+                        <path d="M120-240v-80h720v80H120Zm0-200v-80h720v80H120Zm0-200v-80h720v80H120Z" />
                     </svg>
-                    <input 
-                        type="text" 
-                        placeholder="Search anything..."
-                        className="pl-10 pr-4 py-2 w-64 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-shadow duration-200"
-                    />
+                </button>
+
+                <div className="flex items-center space-x-4">
+                    <div className="relative">
+                        <svg className="w-5 h-5 absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+                        </svg>
+                        <input
+                            type="text"
+                            placeholder="Search anything..."
+                            className="pl-10 pr-4 py-2 w-64 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-shadow duration-200"
+                        />
+                    </div>
+
+                    <button
+                        className="relative p-2 text-gray-600 hover:text-gray-900 hover:bg-gray-100 rounded-lg transition-colors duration-200"
+                        aria-label="Notifications"
+                    >
+                        <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9" />
+                        </svg>
+                        <span className="absolute top-1 right-1 w-5 h-5 bg-red-500 rounded-full text-xs text-white flex items-center justify-center font-medium">
+                            3
+                        </span>
+                    </button>
+
+                    <button
+                        className="w-10 h-10 bg-gradient-to-br from-orange-400 to-orange-600 rounded-full flex items-center justify-center text-white font-semibold shadow-sm hover:shadow-md transition-shadow duration-200"
+                        aria-label="User profile"
+                    >
+                        AD
+                    </button>
                 </div>
-                
-                <button 
-                    className="relative p-2 text-gray-600 hover:text-gray-900 hover:bg-gray-100 rounded-lg transition-colors duration-200"
-                    aria-label="Notifications"
-                >
-                    <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9" />
-                    </svg>
-                    <span className="absolute top-1 right-1 w-5 h-5 bg-red-500 rounded-full text-xs text-white flex items-center justify-center font-medium">
-                        3
-                    </span>
-                </button>
-                
-                <button 
-                    className="w-10 h-10 bg-gradient-to-br from-orange-400 to-orange-600 rounded-full flex items-center justify-center text-white font-semibold shadow-sm hover:shadow-md transition-shadow duration-200"
-                    aria-label="User profile"
-                >
-                    AD
-                </button>
             </div>
-        </div>
-    </header>
+        </header>
     )
 }
 
