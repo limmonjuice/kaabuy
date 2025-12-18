@@ -86,7 +86,7 @@ export default function Auth() {
       login(data);
 
       if (data.requiresPasswordChange) {
-        navigate("/update-credentials");
+        navigate("/change-credentials");
       } else {
         navigate("/dashboard");
       }
