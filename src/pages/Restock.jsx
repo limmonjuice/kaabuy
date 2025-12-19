@@ -12,6 +12,9 @@ function Restock() {
     const [error, setError] = useState("");
     const [filterProduct, setFilterProduct] = useState("");
     const [filterSupplier, setFilterSupplier] = useState("");
+    const [currentPage, setCurrentPage] = useState(0);
+    const [totalPages, setTotalPages] = useState(0);
+    const [itemsPerPage] = useState(10);
     const [showModal, setShowModal] = useState(false);
     const [editingRecord, setEditingRecord] = useState(null);
     const [formRows, setFormRows] = useState([]);
@@ -19,20 +22,42 @@ function Restock() {
     const [formLoading, setFormLoading] = useState(false);
 
     useEffect(() => {
-        fetchStockRecords();
+        if (!filterProduct && !filterSupplier) {
+            fetchStockRecords(currentPage);
+        } else if (filterProduct) {
+            fetchByProduct(filterProduct);
+        } else if (filterSupplier) {
+            fetchBySupplier(filterSupplier);
+        }
         fetchProducts();
         fetchSuppliers();
-    }, []);
+    }, [currentPage]);
 
-    const fetchStockRecords = async () => {
+    // Reset page when filters change
+    useEffect(() => {
+        if (!filterProduct && !filterSupplier) {
+            setCurrentPage(0);
+            fetchStockRecords(0);
+        }
+    }, [filterProduct, filterSupplier]);
+
+    const fetchStockRecords = async (page = 0) => {
         try {
             setLoading(true);
-            const response = await fetch(`${API_URL}/api/stock-records`, {
+            const response = await fetch(`${API_URL}/api/stock-records?page=${page}&size=${itemsPerPage}`, {
                 headers: { "Authorization": `Bearer ${token}` }
             });
             if (response.ok) {
                 const data = await response.json();
-                setStockRecords(data);
+                // Check if response is paginated (has content field)
+                if (data.content) {
+                    setStockRecords(data.content);
+                    setTotalPages(data.totalPages);
+                } else {
+                    // Fallback for filtered endpoints if they are not yet paginated
+                    setStockRecords(data);
+                    setTotalPages(1);
+                }
             }
         } catch (err) {
             setError(err.message);
@@ -128,7 +153,11 @@ function Restock() {
     const clearFilters = () => {
         setFilterProduct("");
         setFilterSupplier("");
-        fetchStockRecords();
+        setFilterProduct("");
+        setFilterSupplier("");
+        setCurrentPage(0);
+        // fetchStockRecords(0) will be triggered by useEffect due to state change, or we call it explicitly
+        // Logic simplified: Filter states trigger the fetch
     };
 
     const handleAddNew = (preselectedProductId = null) => {
@@ -276,7 +305,13 @@ function Restock() {
             }
 
             setShowModal(false);
-            fetchStockRecords();
+            if (!filterProduct && !filterSupplier) {
+                fetchStockRecords(currentPage);
+            } else if (filterProduct) {
+                fetchByProduct(filterProduct);
+            } else if (filterSupplier) {
+                fetchBySupplier(filterSupplier);
+            }
             fetchProducts();
         } catch (err) {
             setFormError(err.message);
@@ -295,7 +330,12 @@ function Restock() {
             });
 
             if (!response.ok) throw new Error("Failed to delete stock record");
-            fetchStockRecords();
+            if (!filterProduct && !filterSupplier) {
+                fetchStockRecords(currentPage);
+            } else {
+                if (filterProduct) fetchByProduct(filterProduct);
+                if (filterSupplier) fetchBySupplier(filterSupplier);
+            }
             fetchProducts();
         } catch (err) {
             alert(err.message);
@@ -581,6 +621,29 @@ function Restock() {
                     </div>
                 )}
             </div>
+
+            {/* Pagination Controls */}
+            {!loading && !filterProduct && !filterSupplier && totalPages > 1 && (
+                <div className="mt-6 flex items-center justify-between bg-white dark:bg-gray-800 p-4 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700">
+                    <button
+                        onClick={() => setCurrentPage(prev => Math.max(0, prev - 1))}
+                        disabled={currentPage === 0}
+                        className="px-4 py-2 text-sm font-medium text-gray-700 dark:text-gray-300 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-600 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                    >
+                        Previous
+                    </button>
+                    <span className="text-sm text-gray-600 dark:text-gray-400 font-medium">
+                        Page {currentPage + 1} of {totalPages}
+                    </span>
+                    <button
+                        onClick={() => setCurrentPage(prev => Math.min(totalPages - 1, prev + 1))}
+                        disabled={currentPage === totalPages - 1}
+                        className="px-4 py-2 text-sm font-medium text-white bg-orange-500 rounded-lg hover:bg-orange-600 disabled:opacity-50 disabled:cursor-not-allowed transition-colors shadow-sm"
+                    >
+                        Next
+                    </button>
+                </div>
+            )}
 
             {/* Record Count */}
             {!loading && stockRecords.length > 0 && (

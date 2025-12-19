@@ -81,9 +81,9 @@ function Sidebar({ isOpen, onToggle }) {
         },
         {
             icon: (
-                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 3v2m6-2v2M9 19v2m6-2v2M5 9H3m2 6H3m18-6h-2m2 6h-2M7 19h10a2 2 0 002-2V7a2 2 0 00-2-2H7a2 2 0 00-2 2v10a2 2 0 002 2zM9 9h6v6H9V9z" />
-                </svg>
+                <span className="material-symbols-outlined" style={{ fontSize: '20px' }}>
+                    delivery_truck_speed
+                </span>
             ),
             text: "Suppliers",
             link: "/suppliers",
@@ -138,11 +138,10 @@ function Sidebar({ isOpen, onToggle }) {
                 <div className="flex items-center space-x-3 flex-1 min-h-12">
                     {isOpen && (
                         <div className="overflow-hidden flex items-center justify-center w-full">
-                            <img
-                                src={isDarkMode ? darkLogo : logo}
-                                alt="Kaabuy Logo"
-                                className="h-12 w-auto object-contain transition-all duration-300"
-                            />
+                            <h1 className="text-2xl font-bold tracking-wider">
+                                <span className="text-gray-800 dark:text-white font-league-spartan">Kaa</span>
+                                <span className="text-orange-500 font-league-spartan">BUY</span>
+                            </h1>
                         </div>
                     )}
                 </div>

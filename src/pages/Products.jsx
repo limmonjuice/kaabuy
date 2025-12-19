@@ -192,7 +192,8 @@ function Products() {
             basePrice: "",
             listPrice: "",
             unit: lastRow ? lastRow.unit : "pcs", // Smart copy
-            imageUrl: ""
+            imageUrl: "",
+            currentStock: 0
         }]);
     };
 
@@ -228,7 +229,8 @@ function Products() {
             basePrice: "",
             listPrice: "",
             unit: "pcs",
-            imageUrl: ""
+            imageUrl: "",
+            currentStock: 0
         }]);
         setFormError("");
         setBatchErrors({});
@@ -312,6 +314,11 @@ function Products() {
                         hasErrors = true;
                     }
 
+                    if (row.currentStock < 0) {
+                        newBatchErrors[`${i}-currentStock`] = "Stock cannot be negative";
+                        hasErrors = true;
+                    }
+
                     // Check duplicate names in batch
                     if (row.productName?.trim()) {
                         const nameLower = row.productName.trim().toLowerCase();
@@ -364,7 +371,8 @@ function Products() {
                             body: JSON.stringify({
                                 ...row,
                                 basePrice: parseFloat(row.basePrice) || 0,
-                                listPrice: parseFloat(row.listPrice)
+                                listPrice: parseFloat(row.listPrice),
+                                currentStock: parseInt(row.currentStock) || 0
                             })
                         });
 
@@ -396,7 +404,7 @@ function Products() {
                     // Ensure we have at least one row, though logic implies we do
                     if (remainingRows.length === 0) {
                         // Should not happen if failingIndex is valid, but fallback
-                        setFormRows([{ productName: "", category: "", basePrice: "", listPrice: "", unit: "pcs", imageUrl: "" }]);
+                        setFormRows([{ productName: "", category: "", basePrice: "", listPrice: "", unit: "pcs", imageUrl: "", currentStock: 0 }]);
                     } else {
                         setFormRows(remainingRows);
                     }
@@ -669,7 +677,7 @@ function Products() {
                                                         </div>
 
                                                         {/* Inputs Column */}
-                                                        <div className="flex-1 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+                                                        <div className="flex-1 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4">
                                                             <div className="lg:col-span-2">
                                                                 <label className="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1">
                                                                     Product Name <span className="text-red-500">*</span>
@@ -744,6 +752,20 @@ function Products() {
                                                                 </div>
                                                                 {batchErrors[`${index}-listPrice`] && (
                                                                     <p className="mt-1 text-xs text-red-500">{batchErrors[`${index}-listPrice`]}</p>
+                                                                )}
+                                                            </div>
+                                                            <div>
+                                                                <label className="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1">Initial Stock</label>
+                                                                <input
+                                                                    type="number"
+                                                                    min="0"
+                                                                    value={row.currentStock}
+                                                                    onChange={(e) => handleRowChange(index, 'currentStock', e.target.value)}
+                                                                    className={`w-full px-3 py-2 text-sm border ${batchErrors[`${index}-currentStock`] ? 'border-red-500' : 'border-gray-300 dark:border-gray-600'} rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500 bg-white dark:bg-gray-700 text-gray-900 dark:text-white`}
+                                                                    placeholder="0"
+                                                                />
+                                                                {batchErrors[`${index}-currentStock`] && (
+                                                                    <p className="mt-1 text-xs text-red-500">{batchErrors[`${index}-currentStock`]}</p>
                                                                 )}
                                                             </div>
                                                         </div>

@@ -12,6 +12,7 @@ import {
     Tooltip,
 } from 'recharts';
 import CustomTooltip from '../components/CustomTooltip';
+import ViewOnlyBanner from "../components/ViewOnlyBanner";
 
 function Dashboard() {
     const { token, user } = useAuth();
@@ -21,10 +22,11 @@ function Dashboard() {
     const [error, setError] = useState("");
     const [selectedPeriod, setSelectedPeriod] = useState("week");
     const [salesData, setSalesData] = useState([]);
+    const [selectedDate, setSelectedDate] = useState(new Date().toISOString().split('T')[0]);
 
     useEffect(() => {
-        fetchDashboardStats();
-    }, []);
+        fetchDashboardStats(selectedDate);
+    }, [selectedDate]);
 
     useEffect(() => {
         if (stats) {
@@ -32,10 +34,11 @@ function Dashboard() {
         }
     }, [selectedPeriod, stats]);
 
-    const fetchDashboardStats = async () => {
+    const fetchDashboardStats = async (date) => {
         try {
             setLoading(true);
-            const response = await fetch(`${API_URL}/api/dashboard`, {
+            const dateParam = date ? `?date=${date}` : '';
+            const response = await fetch(`${API_URL}/api/dashboard${dateParam}`, {
                 headers: { "Authorization": `Bearer ${token}` }
             });
 
@@ -86,6 +89,37 @@ function Dashboard() {
             year: 'numeric'
         });
     };
+
+    const formatSelectedDate = () => {
+        const today = new Date().toISOString().split('T')[0];
+        if (selectedDate === today) return "Today";
+        return new Date(selectedDate).toLocaleDateString('en-US', {
+            month: 'short',
+            day: 'numeric'
+        });
+    };
+
+    const goToPreviousDay = () => {
+        const date = new Date(selectedDate);
+        date.setDate(date.getDate() - 1);
+        setSelectedDate(date.toISOString().split('T')[0]);
+    };
+
+    const goToNextDay = () => {
+        const today = new Date().toISOString().split('T')[0];
+        const date = new Date(selectedDate);
+        date.setDate(date.getDate() + 1);
+        const nextDate = date.toISOString().split('T')[0];
+        if (nextDate <= today) {
+            setSelectedDate(nextDate);
+        }
+    };
+
+    const goToToday = () => {
+        setSelectedDate(new Date().toISOString().split('T')[0]);
+    };
+
+    const isToday = selectedDate === new Date().toISOString().split('T')[0];
 
     if (loading) {
         return (
@@ -138,6 +172,50 @@ function Dashboard() {
                                 <p className="text-xl font-semibold">{user?.storeName || 'Kaabuy'}</p>
                             </div>
                         </div>
+                        {/* Date Navigation */}
+                        <div className="flex items-center justify-between mt-4 pt-4 border-t border-white/20">
+                            <div className="flex items-center gap-2">
+                                <button
+                                    onClick={goToPreviousDay}
+                                    className="p-2 bg-white/20 hover:bg-white/30 rounded-lg transition-colors"
+                                    title="Previous Day"
+                                >
+                                    <svg className="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
+                                    </svg>
+                                </button>
+                                <div className="px-4 py-2 bg-white/20 backdrop-blur-lg rounded-lg">
+                                    <input
+                                        type="date"
+                                        value={selectedDate}
+                                        onChange={(e) => setSelectedDate(e.target.value)}
+                                        max={new Date().toISOString().split('T')[0]}
+                                        className="bg-transparent text-white font-semibold text-center cursor-pointer focus:outline-none"
+                                    />
+                                </div>
+                                <button
+                                    onClick={goToNextDay}
+                                    disabled={isToday}
+                                    className="p-2 bg-white/20 hover:bg-white/30 rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                                    title="Next Day"
+                                >
+                                    <svg className="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+                                    </svg>
+                                </button>
+                            </div>
+                            {!isToday && (
+                                <button
+                                    onClick={goToToday}
+                                    className="px-4 py-2 bg-white/20 hover:bg-white/30 text-white font-medium rounded-lg transition-colors"
+                                >
+                                    Go to Today
+                                </button>
+                            )}
+                            <p className="text-white/80 text-sm">
+                                Viewing stats for: <span className="font-semibold text-white">{formatSelectedDate()}</span>
+                            </p>
+                        </div>
                     </div>
 
                     {/* Main Content Grid */}
@@ -154,7 +232,7 @@ function Dashboard() {
                                             </svg>
                                         </div>
                                     </div>
-                                    <p className="text-white/80 text-xs font-medium mb-1">Today's Sales</p>
+                                    <p className="text-white/80 text-xs font-medium mb-1">{formatSelectedDate()}'s Sales</p>
                                     <p className="text-white text-2xl font-bold">{formatCurrency(stats?.todaySales)}</p>
                                 </div>
 
@@ -190,7 +268,7 @@ function Dashboard() {
                                             </svg>
                                         </div>
                                     </div>
-                                    <p className="text-white/80 text-xs font-medium mb-1">Customers</p>
+                                    <p className="text-white/80 text-xs font-medium mb-1">{formatSelectedDate()}'s Customers</p>
                                     <p className="text-white text-2xl font-bold">{stats?.totalCustomers || 0}</p>
                                     <div className="flex flex-col mt-2 space-y-1">
                                         <span className="text-xs font-bold px-2 py-1 bg-white text-blue-600 rounded-full w-fit shadow-sm">
@@ -386,7 +464,7 @@ function Dashboard() {
 
                             {/* Quick Stats Summary */}
                             <div className="flex-shrink-0 grid grid-cols-3 gap-3">
-                                <div className="bg-white/70 dark:bg-gray-800/50 backdrop-blur-lg rounded-xl p-3 shadow-lg border-2 border-white/20 dark:border-gray-700/30 bg-gradient-to-br from-white/70 to-white/50 dark:from-gray-800/50 dark:to-gray-900/50 hover:scale-105 hover:rotate-2 hover:shadow-xl transition-all duration-300 animate-slide-up-bounce hover:animate-float" style={{ animationDelay: '800ms' }}>
+                                <div className="bg-white/70 dark:bg-gray-800/50 backdrop-blur-lg rounded-xl p-3 shadow-lg border-2 border-white/20 dark:border-gray-700/30 bg-gradient-to-br from-white/70 to-white/50 dark:from-gray-800/50 dark:to-gray-900/50 hover:scale-105 hover:rotate-2 hover:shadow-xl transition-all duration-300 animate-slide-up-bounce" style={{ animationDelay: '800ms' }}>
                                     <div className="flex items-center justify-between mb-2">
                                         <div className="w-8 h-8 bg-gradient-to-br from-blue-400 to-cyan-400 rounded-lg flex items-center justify-center shadow-lg shadow-blue-500/30">
                                             <svg className="w-4 h-4 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -398,21 +476,21 @@ function Dashboard() {
                                     <p className="text-xl font-bold text-gray-900 dark:text-white">{stats?.totalProducts || 0}</p>
                                 </div>
 
-                                <div className="bg-white/70 dark:bg-gray-800/50 backdrop-blur-lg rounded-xl p-3 shadow-lg border-2 border-white/20 dark:border-gray-700/30 bg-gradient-to-br from-white/70 to-white/50 dark:from-gray-800/50 dark:to-gray-900/50 hover:scale-105 hover:rotate-2 hover:shadow-xl transition-all duration-300 animate-slide-up-bounce hover:animate-float" style={{ animationDelay: '900ms' }}>
+                                <div className="bg-white/70 dark:bg-gray-800/50 backdrop-blur-lg rounded-xl p-3 shadow-lg border-2 border-white/20 dark:border-gray-700/30 bg-gradient-to-br from-white/70 to-white/50 dark:from-gray-800/50 dark:to-gray-900/50 hover:scale-105 hover:rotate-2 hover:shadow-xl transition-all duration-300 animate-slide-up-bounce" style={{ animationDelay: '900ms' }}>
                                     <div className="flex items-center justify-between mb-2">
                                         <div className="w-8 h-8 bg-gradient-to-br from-purple-400 to-pink-400 rounded-lg flex items-center justify-center shadow-lg shadow-purple-500/30">
-                                            <svg className="w-4 h-4 text-purple-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
-                                            </svg>
+                                            <span className="material-symbols-outlined text-purple-600" style={{ fontSize: '20px' }}>
+                                                delivery_truck_speed
+                                            </span>
                                         </div>
                                     </div>
-                                    <p className="text-xs text-gray-500 dark:text-gray-400 mb-1">Customers</p>
+                                    <p className="text-xs text-gray-500 dark:text-gray-400 mb-1">Total Suppliers</p>
                                     <p className="text-xl font-bold text-gray-900 dark:text-white mt-1">
-                                        {stats?.totalCustomers || 0}
+                                        {stats?.totalSuppliers || 0}
                                     </p>
                                 </div>
 
-                                <div className="bg-white/70 dark:bg-gray-800/50 backdrop-blur-lg rounded-xl p-3 shadow-lg border-2 border-white/20 dark:border-gray-700/30 bg-gradient-to-br from-white/70 to-white/50 dark:from-gray-800/50 dark:to-gray-900/50 hover:scale-105 hover:rotate-2 hover:shadow-xl transition-all duration-300 animate-slide-up-bounce hover:animate-float" style={{ animationDelay: '1000ms' }}>
+                                <div className="bg-white/70 dark:bg-gray-800/50 backdrop-blur-lg rounded-xl p-3 shadow-lg border-2 border-white/20 dark:border-gray-700/30 bg-gradient-to-br from-white/70 to-white/50 dark:from-gray-800/50 dark:to-gray-900/50 hover:scale-105 hover:rotate-2 hover:shadow-xl transition-all duration-300 animate-slide-up-bounce" style={{ animationDelay: '1000ms' }}>
                                     <div className="flex items-center justify-between mb-2">
                                         <div className="w-8 h-8 bg-gradient-to-br from-red-400 to-orange-400 rounded-lg flex items-center justify-center shadow-lg shadow-red-500/30">
                                             <svg className="w-4 h-4 text-red-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">

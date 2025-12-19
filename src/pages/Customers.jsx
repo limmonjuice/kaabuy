@@ -220,7 +220,10 @@ function Customers() {
                     "Authorization": `Bearer ${token}`
                 }
             });
-            if (!response.ok) throw new Error("Failed to delete customer");
+            if (!response.ok) {
+                const errorData = await response.json();
+                throw new Error(errorData.error || "Failed to delete customer");
+            }
             fetchCustomers();
             fetchSummary();
         } catch (err) {
@@ -455,12 +458,17 @@ function Customers() {
                             const transactions = customerTransactions[customer.customerId] || [];
                             const currentFilter = paymentMethodFilters[customer.customerId] || "";
                             const filteredTransactions = currentFilter
-                                ? transactions.filter(t => t.paymentMethod && t.paymentMethod.toUpperCase() === currentFilter.toUpperCase())
+                                ? transactions.filter(t => {
+                                    if (currentFilter.toUpperCase() === 'UTANG') {
+                                        return t.paymentMethod && (t.paymentMethod.toUpperCase() === 'UTANG' || t.paymentMethod.toUpperCase() === 'CREDIT');
+                                    }
+                                    return t.paymentMethod && t.paymentMethod.toUpperCase() === currentFilter.toUpperCase();
+                                })
                                 : transactions;
 
                             // Calculate active debts (Unpaid Utang)
                             const unpaidUtangTransactions = transactions.filter(t => {
-                                const isUtang = t.paymentMethod && t.paymentMethod.toUpperCase() === 'UTANG';
+                                const isUtang = t.paymentMethod && (t.paymentMethod.toUpperCase() === 'UTANG' || t.paymentMethod.toUpperCase() === 'CREDIT');
                                 const remaining = parseFloat(t.totalAmount) - parseFloat(t.amountPaid || 0);
                                 return isUtang && remaining > 0;
                             });

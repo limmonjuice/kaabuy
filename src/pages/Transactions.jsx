@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import React, { useState, useEffect } from "react";
 import { API_URL } from "../config/constants";
 import { useAuth } from "../context/AuthContext";
 function Transactions() {
@@ -364,7 +364,7 @@ function Transactions() {
                                 {transactions
                                     .slice((currentPage - 1) * itemsPerPage, currentPage * itemsPerPage)
                                     .map((transaction) => (
-                                        <>
+                                        <React.Fragment key={transaction.transactionId}>
                                             <tr
                                                 key={transaction.transactionId}
                                                 onClick={() => toggleRow(transaction.transactionId)}
@@ -467,7 +467,7 @@ function Transactions() {
                                                     </td>
                                                 </tr>
                                             )}
-                                        </>
+                                        </React.Fragment>
                                     ))}
                             </tbody>
                         </table>

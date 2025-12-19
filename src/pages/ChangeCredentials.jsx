@@ -32,7 +32,7 @@ function ChangeCredentials() {
         }
 
         try {
-            const response = await fetch(`${API_URL}/api/auth/change-credentials`, {
+            const response = await fetch(`${API_URL}/api/auth/update-credentials`, {
                 method: "POST",
                 headers: {
                     "Content-Type": "application/json",
