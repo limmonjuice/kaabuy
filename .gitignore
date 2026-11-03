@@ -1,0 +1,18 @@
+# Environment files
+.env
+.env.*
+!.env.example
+
+# Dependencies and build output
+node_modules/
+dist/
+target/
+
+# Images uploaded through the running app
+backend/uploads/
+
+# OS and editor files
+.DS_Store
+Thumbs.db
+.idea/
+.vscode/

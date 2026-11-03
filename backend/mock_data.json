@@ -1,0 +1,467 @@
+{
+  "metadata": {
+    "version": "1.0",
+    "description": "Kaabuy POS System - Mock Data in JSON format",
+    "generated": "2025-12-18",
+    "notes": "Import data in the order: staff, customers, suppliers, products, stock_records, orders, order_items, transactions"
+  },
+  "staff": [
+    {
+      "username": "owner_juan",
+      "password": "$2a$10$N9qo8uLOickgx2ZMRZoMye.Nw7X5XxqH5.4cA1PRzJ7K3zthsOBOS",
+      "firstName": "Juan",
+      "lastName": "Dela Cruz",
+      "storeName": "Kaabuy Sari-Sari Store",
+      "role": "owner",
+      "isActive": true,
+      "email": "juan.delacruz@email.com",
+      "requiresPasswordChange": false
+    },
+    {
+      "username": "owner_carmela",
+      "password": "$2a$10$N9qo8uLOickgx2ZMRZoMye.Nw7X5XxqH5.4cA1PRzJ7K3zthsOBOS",
+      "firstName": "Carmela",
+      "lastName": "Garcia",
+      "storeName": "Kaabuy Sari-Sari Store",
+      "role": "owner",
+      "isActive": true,
+      "email": "carmela.garcia@email.com",
+      "requiresPasswordChange": false
+    },
+    {
+      "username": "staff_maria",
+      "password": "$2a$10$N9qo8uLOickgx2ZMRZoMye.Nw7X5XxqH5.4cA1PRzJ7K3zthsOBOS",
+      "firstName": "Maria",
+      "lastName": "Santos",
+      "storeName": "Kaabuy Sari-Sari Store",
+      "role": "staff",
+      "isActive": true,
+      "email": "maria.santos@email.com",
+      "requiresPasswordChange": false
+    },
+    {
+      "username": "staff_pedro",
+      "password": "$2a$10$N9qo8uLOickgx2ZMRZoMye.Nw7X5XxqH5.4cA1PRzJ7K3zthsOBOS",
+      "firstName": "Pedro",
+      "lastName": "Reyes",
+      "storeName": "Kaabuy Sari-Sari Store",
+      "role": "staff",
+      "isActive": true,
+      "email": "pedro.reyes@email.com",
+      "requiresPasswordChange": false
+    },
+    {
+      "username": "staff_anna",
+      "password": "$2a$10$N9qo8uLOickgx2ZMRZoMye.Nw7X5XxqH5.4cA1PRzJ7K3zthsOBOS",
+      "firstName": "Anna",
+      "lastName": "Villanueva",
+      "storeName": "Kaabuy Sari-Sari Store",
+      "role": "staff",
+      "isActive": true,
+      "email": "anna.v@email.com",
+      "requiresPasswordChange": false
+    },
+    {
+      "username": "staff_rico",
+      "password": "$2a$10$N9qo8uLOickgx2ZMRZoMye.Nw7X5XxqH5.4cA1PRzJ7K3zthsOBOS",
+      "firstName": "Rico",
+      "lastName": "Mendoza",
+      "storeName": "Kaabuy Sari-Sari Store",
+      "role": "staff",
+      "isActive": true,
+      "email": "rico.m@email.com",
+      "requiresPasswordChange": false
+    }
+  ],
+  "customers": [
+    {
+      "customerName": "Aling Nena",
+      "contactNumber": "09171234567",
+      "email": "nena@email.com",
+      "address": "123 Mabini St, Barangay 1"
+    },
+    {
+      "customerName": "Mang Jose",
+      "contactNumber": "09181234568",
+      "email": "jose@email.com",
+      "address": "456 Rizal Ave, Barangay 2"
+    },
+    {
+      "customerName": "Ate Lorna",
+      "contactNumber": "09191234569",
+      "email": "lorna@email.com",
+      "address": "789 Bonifacio Rd, Barangay 3"
+    },
+    {
+      "customerName": "Kuya Ben",
+      "contactNumber": "09201234570",
+      "email": "ben@email.com",
+      "address": "321 Luna St, Barangay 4"
+    },
+    {
+      "customerName": "Tita Cora",
+      "contactNumber": "09211234571",
+      "email": "cora@email.com",
+      "address": "654 Del Pilar Blvd, Barangay 5"
+    },
+    {
+      "customerName": "Nanay Rosa",
+      "contactNumber": "09221234572",
+      "email": "rosa@email.com",
+      "address": "987 Aguinaldo Ave, Barangay 6"
+    },
+    {
+      "customerName": "Tatay Mario",
+      "contactNumber": "09231234573",
+      "email": "mario@email.com",
+      "address": "147 Quezon St, Barangay 7"
+    },
+    {
+      "customerName": "Inday Beth",
+      "contactNumber": "09241234574",
+      "email": "beth@email.com",
+      "address": "258 Osmena Dr, Barangay 8"
+    },
+    {
+      "customerName": "Ka Doms",
+      "contactNumber": "09251234575",
+      "email": "doms@email.com",
+      "address": "369 Magsaysay Blvd, Barangay 9"
+    },
+    {
+      "customerName": "Ate Grace",
+      "contactNumber": "09261234576",
+      "email": "grace@email.com",
+      "address": "741 Roxas Ave, Barangay 10"
+    },
+    {
+      "customerName": "Mang Tomas",
+      "contactNumber": "09271234577",
+      "email": "tomas@email.com",
+      "address": "852 Quirino St, Barangay 11"
+    },
+    {
+      "customerName": "Aling Belen",
+      "contactNumber": "09281234578",
+      "email": "belen@email.com",
+      "address": "963 Laurel Dr, Barangay 12"
+    },
+    {
+      "customerName": "Kuya Edgar",
+      "contactNumber": "09291234579",
+      "email": "edgar@email.com",
+      "address": "159 Ramos Ave, Barangay 13"
+    },
+    {
+      "customerName": "Ate Diana",
+      "contactNumber": "09301234580",
+      "email": "diana@email.com",
+      "address": "357 Garcia St, Barangay 14"
+    },
+    {
+      "customerName": "Nanay Luz",
+      "contactNumber": "09311234581",
+      "email": "luz@email.com",
+      "address": "456 Santos Rd, Barangay 15"
+    },
+    {
+      "customerName": "Tatay Ramon",
+      "contactNumber": "09321234582",
+      "email": "ramon@email.com",
+      "address": "789 Cruz Blvd, Barangay 16"
+    },
+    {
+      "customerName": "Boy Jun",
+      "contactNumber": "09331234583",
+      "email": "jun@email.com",
+      "address": "123 Reyes St, Barangay 17"
+    },
+    {
+      "customerName": "Ate Cherry",
+      "contactNumber": "09341234584",
+      "email": "cherry@email.com",
+      "address": "456 Mendoza Ave, Barangay 18"
+    },
+    {
+      "customerName": "Mang Eddie",
+      "contactNumber": "09351234585",
+      "email": "eddie@email.com",
+      "address": "789 Fernandez Dr, Barangay 19"
+    },
+    {
+      "customerName": "Aling Sofia",
+      "contactNumber": "09361234586",
+      "email": "sofia@email.com",
+      "address": "321 Castillo St, Barangay 20"
+    }
+  ],
+  "suppliers": [
+    {
+      "supplierName": "ABC Distributors",
+      "contactPerson": "Mr. Antonio Bautista",
+      "contactNumber": "09351112222",
+      "address": "100 Industrial Ave, Makati City",
+      "totalOrders": 35,
+      "isPreferred": true
+    },
+    {
+      "supplierName": "XYZ Trading Corp",
+      "contactPerson": "Ms. Clara Dela Rosa",
+      "contactNumber": "09362223333",
+      "address": "200 Commerce St, Pasig City",
+      "totalOrders": 18,
+      "isPreferred": false
+    },
+    {
+      "supplierName": "Metro Grocery Supply",
+      "contactPerson": "Mr. Danny Evangelista",
+      "contactNumber": "09373334444",
+      "address": "300 Market Blvd, Mandaluyong",
+      "totalOrders": 52,
+      "isPreferred": true
+    },
+    {
+      "supplierName": "Pinoy Goods Inc.",
+      "contactPerson": "Ms. Elena Fernandez",
+      "contactNumber": "09384445555",
+      "address": "400 Trade Center, Quezon City",
+      "totalOrders": 12,
+      "isPreferred": false
+    },
+    {
+      "supplierName": "Fresh Farm Direct",
+      "contactPerson": "Mr. Felix Garcia",
+      "contactNumber": "09395556666",
+      "address": "500 Farm Road, Bulacan",
+      "totalOrders": 28,
+      "isPreferred": true
+    },
+    {
+      "supplierName": "Manila Wholesale Hub",
+      "contactPerson": "Mr. George Lim",
+      "contactNumber": "09406667777",
+      "address": "600 Wholesale Complex, Manila",
+      "totalOrders": 22,
+      "isPreferred": true
+    },
+    {
+      "supplierName": "Cebu Trading Co.",
+      "contactPerson": "Ms. Helen Tan",
+      "contactNumber": "09417778888",
+      "address": "700 Port Area, Cebu City",
+      "totalOrders": 8,
+      "isPreferred": false
+    },
+    {
+      "supplierName": "Davao Supply Chain",
+      "contactPerson": "Mr. Ivan Cruz",
+      "contactNumber": "09428889999",
+      "address": "800 Business Park, Davao City",
+      "totalOrders": 5,
+      "isPreferred": false
+    },
+    {
+      "supplierName": "National Distributors",
+      "contactPerson": "Ms. Jenny Aquino",
+      "contactNumber": "09439991111",
+      "address": "900 Distribution Center, Caloocan",
+      "totalOrders": 42,
+      "isPreferred": true
+    },
+    {
+      "supplierName": "Budget Wholesale Mart",
+      "contactPerson": "Mr. Karl Santos",
+      "contactNumber": "09441112222",
+      "address": "1000 Economic Zone, Marikina",
+      "totalOrders": 15,
+      "isPreferred": false
+    }
+  ],
+  "products": [
+    {
+      "productName": "Coca-Cola 1.5L",
+      "category": "Beverages",
+      "basePrice": 45.00,
+      "listPrice": 55.00,
+      "currentStock": 50,
+      "reorderLevel": 10,
+      "isLowStock": false,
+      "unit": "bottle"
+    },
+    {
+      "productName": "Sprite 1.5L",
+      "category": "Beverages",
+      "basePrice": 45.00,
+      "listPrice": 55.00,
+      "currentStock": 45,
+      "reorderLevel": 10,
+      "isLowStock": false,
+      "unit": "bottle"
+    },
+    {
+      "productName": "Royal 500ml",
+      "category": "Beverages",
+      "basePrice": 15.00,
+      "listPrice": 20.00,
+      "currentStock": 100,
+      "reorderLevel": 20,
+      "isLowStock": false,
+      "unit": "bottle"
+    },
+    {
+      "productName": "Piattos Cheese",
+      "category": "Food & Snacks",
+      "basePrice": 12.00,
+      "listPrice": 18.00,
+      "currentStock": 75,
+      "reorderLevel": 15,
+      "isLowStock": false,
+      "unit": "pack"
+    },
+    {
+      "productName": "555 Sardines Tomato Sauce",
+      "category": "Food & Snacks",
+      "basePrice": 20.00,
+      "listPrice": 28.00,
+      "currentStock": 80,
+      "reorderLevel": 20,
+      "isLowStock": false,
+      "unit": "can"
+    },
+    {
+      "productName": "Sinandomeng Rice 1kg",
+      "category": "Cooking Essentials",
+      "basePrice": 45.00,
+      "listPrice": 58.00,
+      "currentStock": 100,
+      "reorderLevel": 20,
+      "isLowStock": false,
+      "unit": "kg"
+    },
+    {
+      "productName": "Datu Puti Soy Sauce 200ml",
+      "category": "Condiments & Seasonings",
+      "basePrice": 18.00,
+      "listPrice": 25.00,
+      "currentStock": 90,
+      "reorderLevel": 20,
+      "isLowStock": false,
+      "unit": "bottle"
+    },
+    {
+      "productName": "Safeguard Soap 135g",
+      "category": "Personal Care",
+      "basePrice": 35.00,
+      "listPrice": 48.00,
+      "currentStock": 60,
+      "reorderLevel": 15,
+      "isLowStock": false,
+      "unit": "bar"
+    },
+    {
+      "productName": "Tide Powder Sachet",
+      "category": "Others / Miscellaneous",
+      "basePrice": 10.00,
+      "listPrice": 15.00,
+      "currentStock": 150,
+      "reorderLevel": 35,
+      "isLowStock": false,
+      "unit": "sachet"
+    },
+    {
+      "productName": "Lucky Me Pancit Canton",
+      "category": "Food & Snacks",
+      "basePrice": 10.00,
+      "listPrice": 15.00,
+      "currentStock": 120,
+      "reorderLevel": 30,
+      "isLowStock": false,
+      "unit": "pack"
+    }
+  ],
+  "sampleOrders": [
+    {
+      "orderDate": "2025-12-18T10:30:00",
+      "status": "COMPLETED",
+      "totalAmount": 165.00,
+      "staffUsername": "staff_maria",
+      "paymentMethod": "Cash",
+      "items": [
+        {
+          "productName": "Coca-Cola 1.5L",
+          "quantity": 2,
+          "unitPrice": 55.00,
+          "subtotal": 110.00
+        },
+        {
+          "productName": "Piattos Cheese",
+          "quantity": 1,
+          "unitPrice": 18.00,
+          "subtotal": 18.00
+        },
+        {
+          "productName": "Lucky Me Pancit Canton",
+          "quantity": 3,
+          "unitPrice": 12.00,
+          "subtotal": 36.00
+        }
+      ]
+    },
+    {
+      "orderDate": "2025-12-18T11:45:00",
+      "status": "COMPLETED",
+      "totalAmount": 250.00,
+      "staffUsername": "staff_maria",
+      "customerName": "Aling Nena",
+      "paymentMethod": "Utang",
+      "items": [
+        {
+          "productName": "Sinandomeng Rice 1kg",
+          "quantity": 2,
+          "unitPrice": 58.00,
+          "subtotal": 116.00
+        },
+        {
+          "productName": "555 Sardines Tomato Sauce",
+          "quantity": 2,
+          "unitPrice": 28.00,
+          "subtotal": 56.00
+        },
+        {
+          "productName": "Tide Powder Sachet",
+          "quantity": 5,
+          "unitPrice": 15.00,
+          "subtotal": 75.00
+        }
+      ]
+    },
+    {
+      "orderDate": "2025-12-18T14:20:00",
+      "status": "COMPLETED",
+      "totalAmount": 450.00,
+      "staffUsername": "staff_pedro",
+      "paymentMethod": "GCash",
+      "items": [
+        {
+          "productName": "Sinandomeng Rice 1kg",
+          "quantity": 5,
+          "unitPrice": 58.00,
+          "subtotal": 290.00
+        },
+        {
+          "productName": "Lucky Me Pancit Canton",
+          "quantity": 10,
+          "unitPrice": 15.00,
+          "subtotal": 150.00
+        }
+      ]
+    }
+  ],
+  "notes": {
+    "passwords": "All staff passwords are 'password123' (hashed with BCrypt)",
+    "importOrder": "Import in this order to maintain referential integrity: staff → customers → suppliers → products → stock_records → orders → order_items → transactions",
+    "utangSystem": "Orders with customer_id and payment_method='Utang' represent credit purchases",
+    "paymentTracking": "Use payment_method='PAYMENT' in transactions table to record payments on credit",
+    "stockManagement": "Products with current_stock <= reorder_level should have is_low_stock=true"
+  }
+}
