@@ -8,7 +8,7 @@
 ![MySQL](https://img.shields.io/badge/MySQL-4479A1?logo=mysql&logoColor=white)
 ![Tailwind CSS](https://img.shields.io/badge/Tailwind_CSS-06B6D4?logo=tailwindcss&logoColor=white)
 
-Team project, November to December 2025. This repo is the React frontend; the Spring Boot API lives in [Kaabuy_Backend](https://github.com/Allyssa023/Kaabuy_Backend).
+Team project, November to December 2025. This repo has the whole app: the React frontend in [`frontend/`](frontend) and the Spring Boot API in [`backend/`](backend).
 
 ![Sales dashboard](docs/screenshots/dashboard.png)
 
@@ -37,11 +37,11 @@ flowchart LR
     B -->|SMTP| D[Staff welcome emails]
 ```
 
-| Part | Built with |
-|---|---|
-| Frontend | React 19, Vite 7, Tailwind CSS 3, React Router 7, Recharts |
-| Backend | Java 17, Spring Boot 4, Spring Security with JWT, Spring Data JPA (Hibernate), JavaMail |
-| Database | MySQL |
+| Part | Folder | Built with |
+|---|---|---|
+| Frontend | [`frontend/`](frontend) | React 19, Vite 7, Tailwind CSS 3, React Router 7, Recharts |
+| Backend | [`backend/`](backend) | Java 17, Spring Boot 4, Spring Security with JWT, Spring Data JPA (Hibernate), JavaMail |
+| Database | | MySQL, with sample data in [`backend/backup.sql`](backend/backup.sql) |
 
 ## My part
 
@@ -52,15 +52,33 @@ I worked on both sides of the app.
 
 ## Run it locally
 
-1. Start the backend from [Kaabuy_Backend](https://github.com/Allyssa023/Kaabuy_Backend) with a MySQL database. A sample database is in [`backup.sql`](backup.sql).
-2. The frontend calls `http://localhost:8080` by default. To use another address, create a `.env` file with `VITE_API_URL=<your backend URL>`.
-3. Install and run (Node 20.19 or newer):
+### Backend
+
+You'll need Java 17 or newer and MySQL. By default the API connects to `kaabuy_db` on `localhost:3310` as `root`, and creates the database if it doesn't exist. Set these environment variables first:
+
+| Variable | What it's for |
+|---|---|
+| `JWT_SECRET` | Required. Any random string of at least 32 characters |
+| `DB_URL`, `DB_USERNAME`, `DB_PASSWORD` | Optional. Override the database connection |
+| `MAIL_USERNAME`, `MAIL_PASSWORD` | Optional. A Gmail address and app password for staff welcome emails |
 
 ```bash
+cd backend
+./mvnw spring-boot:run
+```
+
+On Windows, run `mvnw.cmd spring-boot:run` instead. The API starts at http://localhost:8080. To load sample data, import [`backend/backup.sql`](backend/backup.sql) or follow the [mock data guide](backend/MOCK_DATA_IMPORT_GUIDE.md).
+
+### Frontend
+
+You'll need Node 20.19 or newer.
+
+```bash
+cd frontend
 npm install
 npm run dev
 ```
 
-Then open http://localhost:5173.
+Then open http://localhost:5173. The app calls the API at `http://localhost:8080`; to use another address, create `frontend/.env` with `VITE_API_URL=<your backend URL>`.
 
 The screenshots show the app running with the project's sample data.
