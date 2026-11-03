@@ -50,8 +50,6 @@ I worked on both sides of the app.
 - **Backend (Java, Spring Boot):** the REST APIs and service logic for customers, orders, suppliers, stock records, transactions and dashboard statistics; staff management; the first-login password change; welcome emails; and global error handling.
 - **Frontend (React):** the point of sale, customers, restocking, transactions and inventory pages; the sales dashboard; staff management with role-based access; and a UI overhaul across the app, including the landing page.
 
-Built with [Allyssa023](https://github.com/Allyssa023), [manofsteeljj](https://github.com/manofsteeljj) and [IraPalabay0321](https://github.com/IraPalabay0321).
-
 ## Run it locally
 
 1. Start the backend from [Kaabuy_Backend](https://github.com/Allyssa023/Kaabuy_Backend) with a MySQL database. A sample database is in [`backup.sql`](backup.sql).
