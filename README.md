@@ -53,7 +53,7 @@ I worked on both sides of the app.
 ## Run it locally
 
 1. Start the backend from [Kaabuy_Backend](https://github.com/Allyssa023/Kaabuy_Backend) with a MySQL database. A sample database is in [`backup.sql`](backup.sql).
-2. Point the frontend at it. `.env` already has `VITE_API_URL=http://localhost:8080`.
+2. The frontend calls `http://localhost:8080` by default. To use another address, create a `.env` file with `VITE_API_URL=<your backend URL>`.
 3. Install and run (Node 20.19 or newer):
 
 ```bash
